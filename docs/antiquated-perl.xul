@@ -1,0 +1,565 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet href="chrome://global/skin/" type="text/css"?><?xml-stylesheet href="takahashi.css" type="text/css"?><page xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul" id="presentation" xmlns:html="http:/www.w3.org/1999/xhtml" orient="vertical" onkeypress="Presentation.onKeyPress(event);">
+<html:textarea id="builtinCode" style="visibility: collapse"><![CDATA[
+Antiquated
+Perl
+----
+Modern
+Perl?
+----
+Post
+Modern
+Perl
+----
+Enlightened
+Perl
+----
+everybody
+knows
+----
+Catalyst
+Moose
+DBIx::Class
+----
+Modern
+Perl?
+----
+perl5
+v10
+----
+  given ($x) {
+    when (3) {
+  ...
+----
+~~
+----
+what's the
+opposite?
+----
+Old
+Perl?
+----
+if it 
+works
+----
+Legacy
+Perl?
+----
+not
+interesting
+----
+Stupid
+Perl
+----
+*$&^*(^
+FormMail.PL
+----
+Antiquated
+Perl
+----
+Antique
+----
+Old *and*
+beautiful
+----
+Simple
+Elegant
+----
+  $|++
+----
+  use IO::Handle;
+  STDOUT->autoflush(1);
+----
+it's core.
+it's fine.
+----
+but why
+think?
+----
+  select((select(FOO),$|++)[0])
+----
+  (select(FOO),$|++)
+  ->
+  ($old_selected_fh,$|)
+----
+  (select(FOO),$|++)[0]
+  ->
+  $old_select_fh
+----
+  select((select(FOO),$|++)[0])
+  ->
+  use IO::Handle;
+  FOO->autoflush(1)
+----
+~~
+----
+  ~~@x
+----
+  ~(~(@x))
+----
+bitwise
+negation
+----
+so ...
+----
+  ~@x
+  ->
+  ~(scalar @x)
+----
+  ~~$number
+  ->
+  $number
+----
+  ~~@x
+  ->
+  scalar @x
+----
+  perl -MMoose -e'print ~~keys %INC'
+  84
+----
+overload::constant
+----
+lets you
+affect
+parsing
+----
+numbers
+strings
+----
+q qq qr
+t s qw
+----
+i18n.pm
+----
+~~"$foo bar"
+loc("_[0] bar", $foo)
+----
+for
+----
+  for ($foo) {
+    /bar/ and ...
+----
+  for ($foo) {
+    /bar/ and return do {
+      <code here>
+    }
+----
+  /foo/gc
+----
+  /\Gbar/gc
+----
+  sub parse {
+    my ($self, $str) = @_;
+    for ($str) {
+      /match1/gc and return
+        $self->_subparse_1($_)
+----
+  sub _subparse_1 {
+    my ($self) = @_;
+    for ($_[1]) {
+      /\Gsubmatch1/gc ...
+----
+prototypes
+----
+  sub foo (&) {
+----
+  foo {
+    ...
+  };
+----
+  prototype \&foo
+----
+typeglobs
+----
+  *{"${package}::${name}"}
+    = sub { ... }
+---- 
+  local
+----
+  local $_
+----
+  local *Carp::croak
+    = \&Carp::confess;
+----
+  do {
+    local (@ARGV, $/) = $file;
+    <>
+  }
+----
+strict
+and
+warnings
+----
+  strict->import
+----
+affects
+compilation
+scope
+----
+  sub strict_and_warnings::import {
+    strict->import;
+    warnings->import;
+  }
+----
+  use strict_and_warnings;
+----
+$^H
+%^H
+----
+  $^H |= 0x120000;
+  $^H{'foo'}
+    = bless($foo, 'My::Foo');
+----
+  sub My::Foo::DESTROY {
+----
+  delete ${$package}{myimport}
+----
+B::Hooks::EndOfScope
+----
+tie
+----
+  tie $var, 'Foo';
+----
+  sub FETCH
+  sub STORE
+----
+Scalar
+Array
+Hash
+Handle
+----
+now ...
+----
+mst: destruction
+testing technology
+since March 1983
+----
+3 days
+old
+----
+2 weeks
+early
+----
+incubator
+----
+glass box
+plastic tray
+heater
+----
+design
+flaw
+----
+BANG
+----
+so ...
+----
+interesting
+fact
+----
+prototypes
+only warn
+when parsed
+----
+error when
+compiled
+----
+so ...
+----
+  dispatch [
+    sub (GET + /) { ... },
+    sub (GET + /user/*) { ... }
+  ];
+----
+  foreach my $sub (@$dispatch) {
+    my $proto = prototype $sub;
+    $parser->parse($proto);
+    ...
+----
+  PARSE: { do {
+    push @match, $self->_parse_spec_section($spec)
+      or $self->_blam("Unable to work out what the next section is");
+    last PARSE if (pos == length);
+    /\G\+/gc or $self->_blam('Spec sections must be separated by +');
+  } until (pos == length) };
+----
+  sub _blam {
+    my ($self, $error) = @_;
+    my $hat = (' ' x pos).'^';
+    die "Error parsing dispatch specification: ${error}\n
+  ${_}
+  ${hat} here\n";
+  }
+----
+  Error parsing ...
+  GET+/foo
+     ^ here
+----
+  sub (GET + /user/*) {
+   my ($self, $user) = @_;
+----
+I hate
+fetching
+$self
+----
+  *{"${app}::self"}
+    = \${"${app}::self"};
+----
+use vars
+----
+  sub _run_with_self {
+    my ($self, $run, @args) = @_;
+    my $class = ref($self);
+    no strict 'refs';
+    local *{"${class}::self"} = \$self;
+    $self->$run(@args);
+  }
+----
+HTML
+output
+----
+templates
+----
+HTML is
+NOT TEXT
+----
+  <div>,
+    $text,
+  </div>;
+----
+<div>
+----
+<$fh>
+----
+  tie *{"${app}::${name}"},
+    'XML::Tags::TIEHANDLE',
+    "<${name}>";
+----
+  sub TIEHANDLE { my $str = $_[1]; bless \$str, $_[0] }
+  sub READLINE { ${$_[0]} }
+----
+  sub DESTROY {
+    my ($into, @names) = @$_[0];
+    no strict 'refs';
+    delete ${$into}{$_}
+      for @names;
+  }
+----
+</div>
+----
+glob('/div');
+----
+  *CORE::GLOBAL::glob
+    = sub { ... };
+----
+  delete
+    ${CORE::GLOBAL::}{glob};
+----
+  sub foo {
+    use XML::Tags qw(div);
+    <div>, "foo!", </div>;
+  }
+----
+what about
+interpolation
+----
+  my $stuff = 'foo"bar';
+  <a href="$stuff">
+----
+hmm ...
+----
+overload::constant!
+----
+  glob('a href="'.$stuff.'"');
+----
+  glob(
+    bless(\'a href="', 'MagicTag')
+    .$stuff
+    .bless(\'"', 'MagicTag')
+  )
+----
+  use overload
+    '.' => 'concat';
+
+  sub concat {
+----
+hooking
+it up
+----
+  sub (.html) {
+    filter_response {
+      $self->render_html($_[1])
+    }
+  }
+----
+  bless(
+    $_[1],
+    'Web::Simple::ResponseFilter'
+  );
+----
+  if ($self->_is_response_filter($result)) {
+    return $self->_run_with_self(
+      $result,
+      $self->_run_dispatch_for($new_env, \@disp)
+    );
+  }
+----
+and the result?
+----
+ goto &demo;
+----
+questions?
+----
+thank
+you
+]]></html:textarea>
+
+
+
+
+
+
+
+
+
+
+
+<deck flex="1" id="deck">
+
+<vbox flex="1"
+	onmousemove="Presentation.onMouseMoveOnCanvas(event);">
+	<toolbox id="canvasToolbar">
+		<toolbar>
+			<toolbarbutton oncommand="Presentation.home()" label="|&lt;&lt;"
+				observes="canBack"/>
+			<toolbarbutton oncommand="Presentation.back()" label="&lt;"
+				observes="canBack"/>
+			<toolbarbutton oncommand="Presentation.forward()" label="&gt;"
+				observes="canForward"/>
+			<toolbarbutton oncommand="Presentation.end()" label="&gt;&gt;|"
+				observes="canForward"/>
+			<toolbarseparator/>
+			<hbox align="center">
+				<textbox id="current_page" size="4"
+					oninput="if (this.value) Presentation.showPage(parseInt(this.value)-1);"/>
+				<description value="/"/>
+				<description id="max_page"/>
+			</hbox>
+			<toolbarseparator/>
+			<vbox flex="2">
+				<spacer flex="1"/>
+				<scrollbar id="scroller"
+					align="center" orient="horizontal"
+					oncommand="Presentation.showPage(parseInt(event.target.getAttribute('curpos')));"
+					onclick="Presentation.showPage(parseInt(event.target.getAttribute('curpos')));"
+					onmousedown="Presentation.onScrollerDragStart();"
+					onmousemove="Presentation.onScrollerDragMove();"
+					onmouseup="Presentation.onScrollerDragDrop();"/>
+				<spacer flex="1"/>
+			</vbox>
+			<toolbarseparator/>
+			<spacer flex="1"/>
+			<toolbarseparator/>
+			<toolbarbutton id="toggleEva" label="Eva"
+				type="checkbox"
+				autoCheck="false"
+				oncommand="Presentation.toggleEvaMode();"/>
+			<toolbarseparator/>
+			<toolbarbutton label="Edit"
+				oncommand="Presentation.toggleEditMode();"/>
+			<toolbarbutton oncommand="Presentation.reload();" label="Reload"/>
+		</toolbar>
+	</toolbox>
+	<vbox flex="1" id="canvas"
+		onclick="Presentation.onPresentationClick(event);">
+		<spacer flex="1"/>
+		<hbox flex="1">
+			<spacer flex="1"/>
+			<vbox id="content"/>
+			<spacer flex="1"/>
+		</hbox>
+		<spacer flex="1"/>
+	</vbox>
+</vbox>
+
+
+<vbox flex="1" id="edit">
+	<toolbox>
+		<toolbar>
+			<toolbarbutton label="New Page"
+				oncommand="Presentation.addPage()"/>
+			<spacer flex="1"/>
+			<toolbarseparator/>
+			<toolbarbutton label="View"
+				oncommand="Presentation.toggleEditMode();"/>
+			<toolbarbutton oncommand="Presentation.reload();" label="Reload"/>
+		</toolbar>
+	</toolbox>
+	<textbox id="textField" flex="1" multiline="true"
+		oninput="Presentation.onEdit()"/>
+	<hbox collapsed="true">
+		<iframe id="dataLoader" onload="if (window.Presentation) Presentation.onDataLoad();"/>
+	</hbox>
+</vbox>
+
+</deck>
+
+
+<broadcasterset>
+	<broadcaster id="canBack"/>
+	<broadcaster id="canForward"/>
+</broadcasterset>
+
+<commandset>
+	<command id="cmd_forward"
+		oncommand="if (Presentation.isPresentationMode) Presentation.forward();"/>
+	<command id="cmd_back"
+		oncommand="if (Presentation.isPresentationMode) Presentation.back();"/>
+	<command id="cmd_home"
+		oncommand="if (Presentation.isPresentationMode) Presentation.home();"/>
+	<command id="cmd_end"
+		oncommand="if (Presentation.isPresentationMode) Presentation.end();"/>
+</commandset>
+<keyset>
+	<key keycode="VK_ENTER"      command="cmd_forward"/>
+	<key keycode="VK_RETURN"     command="cmd_forward"/>
+	<key keycode="VK_PAGE_DOWN"  command="cmd_forward"/>
+	<key keycode="VK_RIGHT"      command="cmd_forward"/>
+	<key keycode="VK_DOWN"       command="cmd_forward"/>
+	<!-- key keycode="VK_BACK_SPACE" command="cmd_back"/-->
+	<key keycode="VK_PAGE_UP"    command="cmd_back"/>
+        <!-- <key keycode="VK_BACK_UP"    command="cmd_back"/>-->
+        <!-- <key keycode="VK_BACK_LEFT"  command="cmd_back"/>-->
+	<key keycode="VK_HOME"       command="cmd_home"/>
+	<key keycode="VK_END"        command="cmd_end"/>
+	<key key="n" modifiers="accel" oncommand="Presentation.addPage();"/>
+	<key key="r" modifiers="accel" oncommand="window.location.reload();"/>
+	<key key="e" modifiers="accel" oncommand="Presentation.toggleEditMode();"/>
+	<key key="a" modifiers="accel" oncommand="Presentation.toggleEvaMode();"/>
+</keyset>
+
+
+<script src="takahashi.js" type="application/x-javascript" />
+</page>
+<!-- ***** BEGIN LICENSE BLOCK *****
+   - Version: MPL 1.1
+   -
+   - The contents of this file are subject to the Mozilla Public License Version
+   - 1.1 (the "License"); you may not use this file except in compliance with
+   - the License. You may obtain a copy of the License at
+   - http://www.mozilla.org/MPL/
+   -
+   - Software distributed under the License is distributed on an "AS IS" basis,
+   - WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+   - for the specific language governing rights and limitations under the
+   - License.
+   -
+   - The Original Code is the Takahashi-Method-based Presentation Tool in XUL.
+   -
+   - The Initial Developer of the Original Code is SHIMODA Hiroshi.
+   - Portions created by the Initial Developer are Copyright (C) 2005
+   - the Initial Developer. All Rights Reserved.
+   -
+   - Contributor(s): SHIMODA Hiroshi <piro@p.club.ne.jp>
+   -
+   - ***** END LICENSE BLOCK ***** -->
+
+
