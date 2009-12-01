@@ -1,5 +1,10 @@
 Change log for Web::Simple
 
+0.002 - Tue Dec 01 2009 00:30 UTC
+  - fix dispatcher construction to recognise '' as no proto (we expected undef)
+  - plackup support, as_psgi_app method
+  - Fix SYNOPSIS
+
 0.001 - Tue Nov 24 2009 21:54 UTC
 
   - Initial release

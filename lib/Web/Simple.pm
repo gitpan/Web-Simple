@@ -4,7 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use 5.008;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 sub setup_all_strictures {
   strict->import;
@@ -87,7 +87,7 @@ change things at all. Not yet. Sorry.
       sub () {
         [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
       }
-    ];
+    };
   }
 
   HelloWorld->run_if_script;
@@ -175,120 +175,51 @@ so that perl will not attempt to load the application again even if
 
 is encountered in other code.
 
-=head1 EXPORTED SUBROUTINES
-
-=head2 default_config
-
-  default_config(
-    one_key => 'foo',
-    another_key => 'bar',
-  );
-
-  ...
-
-  $self->config->{one_key} # 'foo'
-
-This creates the default configuration for the application, by creating a
-
-  sub _default_config {
-     return (one_key => 'foo', another_key => 'bar');
-  }
-
-in the application namespace when executed. Note that this means that
-you should only run default_config once - calling it a second time will
-cause an exception to be thrown.
-
-=head2 dispatch
-
-  dispatch {
-    sub (GET) {
-      [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
-    },
-    sub () {
-      [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
-    }
-  };
-
-The dispatch subroutine calls NameOfApplication->_setup_dispatcher with
-the return value of the block passed to it, which then creates your Web::Simple
-application's dispatcher from these subs. The prototype of each subroutine
-is expected to be a Web::Simple dispatch specification (see
-L</DISPATCH SPECIFICATIONS> below for more details), and the body of the
-subroutine is the code to execute if the specification matches.
-
-Each dispatcher is given the dispatcher constructed from the next subroutine
-returned as its next dispatcher, except for the final subroutine, which
-is given the return value of NameOfApplication->_build_final_dispatcher
-as its next dispatcher (by default this returns a 500 error response).
-
-See L</DISPATCH STRATEGY> below for details on how the Web::Simple dispatch
-system uses the return values of these subroutines to determine how to
-continue, alter or abort dispatch.
-
-Note that _setup_dispatcher creates a
-
-  sub _dispatcher {
-    return <root dispatcher object here>;
-  }
-
-method in your class so as with default_config, calling dispatch a second time
-will result in an exception.
-
-=head2 response_filter
-
-  response_filter {
-    # Hide errors from the user because we hates them, preciousss
-    if (ref($_[1]) eq 'ARRAY' && $_[1]->[0] == 500) {
-      $_[1] = [ 200, @{$_[1]}[1..$#{$_[1]}] ];
-    }
-    return $_[1];
-  };
-
-The response_filter subroutine is designed for use inside dispatch subroutines.
-
-It creates and returns a special dispatcher that always matches, and calls
-the block passed to it as a filter on the result of running the rest of the
-current dispatch chain.
-
-Thus the filter above runs further dispatch as normal, but if the result of
-dispatch is a 500 (Internal Server Error) response, changes this to a 200 (OK)
-response without altering the headers or body.
-
-=head2 redispatch_to
-
-  redispatch_to '/other/url';
-
-The redispatch_to subroutine is designed for use inside dispatch subroutines.
-
-It creates and returns a special dispatcher that always matches, and instead
-of continuing dispatch re-delegates it to the start of the dispatch process,
-but with the path of the request altered to the supplied URL.
-
-Thus if you receive a POST to '/some/url' and return a redipstch to
-'/other/url', the dispatch behaviour will be exactly as if the same POST
-request had been made to '/other/url' instead.
-
-=head2 subdispatch
-
-  subdispatch sub (/user/*/) {
-    my $u = $self->user($_[1]);
-    [
-      sub (GET) { $u },
-      sub (DELETE) { $u->delete },
-    ]
-  }
-
-The subdispatch subroutine is designed for use in dispatcher construction.
-
-It creates a dispatcher which, if it matches, treats its return value not
-as a final value but an arrayref of dispatch specifications such as could
-be passed to the dispatch subroutine itself. These are turned into a dispatcher
-which is then invoked. Any changes the match makes to the request are in
-scope for this inner dispatcher only - so if the initial match is a
-destructive one like .html the full path will be restored if the
-subdispatch fails.
-
 =head1 DISPATCH STRATEGY
+
+=head2 Examples
+
+ dispatch {
+   # matches: GET /user/1.htm?show_details=1
+   #          GET /user/1.htm
+   sub (GET + /user/* + ?show_details~ + .htm|.html|.xhtml) {
+     shift; my ($user_id, $show_details) = @_;
+     ...
+   },
+   # matches: POST /user?username=frew
+   #          POST /user?username=mst&first_name=matt&last_name=trout
+   sub (POST + /user + ?username=&*) {
+      shift; my ($username, $misc_params) = @_;
+     ...
+   },
+   # matches: DELETE /user/1/friend/2
+   sub (DELETE + /user/*/friend/*) {
+     shift; my ($user_id, $friend_id) = @_;
+     ...
+   },
+   # matches: PUT /user/1?first_name=Matt&last_name=Trout
+   sub (PUT + /user/* + ?first_name~&last_name~) {
+     shift; my ($user_id, $first_name, $last_name) = @_;
+     ...
+   },
+   sub (/user/*/...) {
+      my $user_id = $_[1];
+      subdispatch sub {
+         [
+            # matches: PUT /user/1/role/1
+            sub (PUT + /role/*) {
+              my $role_id = $_[1];
+              ...
+            },
+            # matches: DELETE /user/1/role/1
+            sub (DELETE + /role/*) {
+              my $role_id = shift;
+              ...
+            },
+         ];
+      }
+   },
+ }
 
 =head2 Description of the dispatcher object
 
@@ -365,7 +296,7 @@ should unpack them like so:
 
 =head3 Method matches
 
-  sub (GET ...) {
+  sub (GET) {
 
 A match specification beginning with a capital letter matches HTTP requests
 with that request method.
@@ -558,6 +489,119 @@ from subroutine prototypes, so this is equivalent to
 
   sub (GET+/user/*) {
 
+=head1 EXPORTED SUBROUTINES
+
+=head2 default_config
+
+  default_config(
+    one_key => 'foo',
+    another_key => 'bar',
+  );
+
+  ...
+
+  $self->config->{one_key} # 'foo'
+
+This creates the default configuration for the application, by creating a
+
+  sub _default_config {
+     return (one_key => 'foo', another_key => 'bar');
+  }
+
+in the application namespace when executed. Note that this means that
+you should only run default_config once - calling it a second time will
+cause an exception to be thrown.
+
+=head2 dispatch
+
+  dispatch {
+    sub (GET) {
+      [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
+    },
+    sub () {
+      [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
+    }
+  };
+
+The dispatch subroutine calls NameOfApplication->_setup_dispatcher with
+the return value of the block passed to it, which then creates your Web::Simple
+application's dispatcher from these subs. The prototype of each subroutine
+is expected to be a Web::Simple dispatch specification (see
+L</DISPATCH SPECIFICATIONS> below for more details), and the body of the
+subroutine is the code to execute if the specification matches.
+
+Each dispatcher is given the dispatcher constructed from the next subroutine
+returned as its next dispatcher, except for the final subroutine, which
+is given the return value of NameOfApplication->_build_final_dispatcher
+as its next dispatcher (by default this returns a 500 error response).
+
+See L</DISPATCH STRATEGY> below for details on how the Web::Simple dispatch
+system uses the return values of these subroutines to determine how to
+continue, alter or abort dispatch.
+
+Note that _setup_dispatcher creates a
+
+  sub _dispatcher {
+    return <root dispatcher object here>;
+  }
+
+method in your class so as with default_config, calling dispatch a second time
+will result in an exception.
+
+=head2 response_filter
+
+  response_filter {
+    # Hide errors from the user because we hates them, preciousss
+    if (ref($_[1]) eq 'ARRAY' && $_[1]->[0] == 500) {
+      $_[1] = [ 200, @{$_[1]}[1..$#{$_[1]}] ];
+    }
+    return $_[1];
+  };
+
+The response_filter subroutine is designed for use inside dispatch subroutines.
+
+It creates and returns a special dispatcher that always matches, and calls
+the block passed to it as a filter on the result of running the rest of the
+current dispatch chain.
+
+Thus the filter above runs further dispatch as normal, but if the result of
+dispatch is a 500 (Internal Server Error) response, changes this to a 200 (OK)
+response without altering the headers or body.
+
+=head2 redispatch_to
+
+  redispatch_to '/other/url';
+
+The redispatch_to subroutine is designed for use inside dispatch subroutines.
+
+It creates and returns a special dispatcher that always matches, and instead
+of continuing dispatch re-delegates it to the start of the dispatch process,
+but with the path of the request altered to the supplied URL.
+
+Thus if you receive a POST to '/some/url' and return a redipstch to
+'/other/url', the dispatch behaviour will be exactly as if the same POST
+request had been made to '/other/url' instead.
+
+=head2 subdispatch
+
+  subdispatch sub (/user/*/) {
+    my $u = $self->user($_[1]);
+    [
+      sub (GET) { $u },
+      sub (DELETE) { $u->delete },
+    ]
+  }
+
+The subdispatch subroutine is designed for use in dispatcher construction.
+
+It creates a dispatcher which, if it matches, treats its return value not
+as a final value but an arrayref of dispatch specifications such as could
+be passed to the dispatch subroutine itself. These are turned into a dispatcher
+which is then invoked. Any changes the match makes to the request are in
+scope for this inner dispatcher only - so if the initial match is a
+destructive one like .html the full path will be restored if the
+subdispatch fails.
+
 =head1 CHANGES BETWEEN RELEASES
 
 =head2 Changes since Antiquated Perl
@@ -568,7 +612,7 @@ from subroutine prototypes, so this is equivalent to
 
 This is a pure rename; a global search and replace should fix it.
 
-=item * dispatch [] changed to dispatch []
+=item * dispatch [] changed to dispatch {}
 
 Simply changing
 

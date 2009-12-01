@@ -2,13 +2,13 @@ use Web::Simple 'DispatchEx';
 
 package DispatchEx;
 
-dispatch [
-  filter_response {
+dispatch {
+  response_filter {
     [ 200, [ 'Content-type' => 'text/plain' ], $_[1] ];
   },
   subdispatch sub (.html) {
     [
-      filter_response { [ @{$_[1]}, '.html' ] },
+      response_filter { [ @{$_[1]}, '.html' ] },
       sub (/foo) { [ '/foo' ] },
     ]
   },
@@ -24,6 +24,6 @@ dispatch [
       }
     ]
   }
-];
+};
 
 DispatchEx->run_if_script;

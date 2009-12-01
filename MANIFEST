@@ -7,6 +7,7 @@ examples/bloggery/posts/Another-Post.html
 examples/bloggery/posts/One-Post.html
 examples/bloggery/posts/One-Post.summary.html
 examples/dispatchex/dispatchex.cgi
+examples/hello-world/hello-world.cgi
 inc/Module/Install.pm
 inc/Module/Install/Base.pm
 inc/Module/Install/Can.pm

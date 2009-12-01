@@ -171,7 +171,7 @@ sub _build_dispatcher_from_spec {
   my $proto = prototype $spec;
   my $parser = $class->_build_dispatch_parser;
   my $matcher = (
-    defined($proto)
+    defined($proto) && length($proto)
       ? $parser->parse_dispatch_specification($proto)
       : undef
   );
@@ -223,7 +223,8 @@ sub _run_with_self {
 }
 
 sub run_if_script {
-  return 1 if caller(1); # 1 so we can be the last thing in the file
+  # ->as_psgi_app is true for require() but also works for plackup
+  return $_[0]->as_psgi_app if caller(1);
   my $class = shift;
   my $self = $class->new;
   $self->run(@_);
@@ -232,7 +233,12 @@ sub run_if_script {
 sub _run_cgi {
   my $self = shift;
   require Web::Simple::HackedPlack;
-  Plack::Server::CGI->run(sub { $self->_dispatch(@_) });
+  Plack::Server::CGI->run($self->as_psgi_app);
+}
+
+sub as_psgi_app {
+  my $self = shift;
+  ref($self) ? sub { $self->_dispatch(@_) } : sub { $self->new->_dispatch(@_) }
 }
 
 sub run {
