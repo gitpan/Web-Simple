@@ -4,7 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use 5.008;
 
-our $VERSION = '0.003';
+our $VERSION = '0.004';
 
 sub setup_all_strictures {
   strict->import;

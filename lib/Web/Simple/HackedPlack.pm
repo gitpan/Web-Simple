@@ -7,17 +7,21 @@
 # So I thought perhaps I'd make it bricktext instead.
 #   -- love, mst
 
-package Plack::Server::CGI;
+# Hide from PAUSE
+package
+    Plack::Server::CGI;
 use strict;
 use warnings;
 use IO::Handle;
 BEGIN {
 
-    package Plack::Util;
+    # Hide from PAUSE
+    package
+        Plack::Util;
 
     sub foreach {
         my($body, $cb) = @_;
-    
+
         if (ref $body eq 'ARRAY') {
             for my $line (@$body) {
                 $cb->($line) if length $line;

@@ -1,5 +1,8 @@
 Change log for Web::Simple
 
+0.004 - Thu Jul 08 2010 22:08 UTC
+  - Hide Plack Modules from PAUSE
+
 0.003 - Thu Jul 08 2010 14:48 UTC
   - Experimentally use $_[ENV] for the PSGI env
   - Add CSS::Declare
