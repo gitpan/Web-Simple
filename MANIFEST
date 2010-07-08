@@ -16,6 +16,7 @@ inc/Module/Install/Makefile.pm
 inc/Module/Install/Metadata.pm
 inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
+lib/CSS/Declare.pm
 lib/HTML/Tags.pm
 lib/Web/Simple.pm
 lib/Web/Simple/Application.pm
@@ -27,7 +28,10 @@ Makefile.PL
 MANIFEST			This list of files
 META.yml
 t/bloggery.t
+t/buildall.t
+t/css_declare.t
 t/dispatch_parser.t
+t/env.t
 t/globbery/one
 t/globbery/two
 t/param_parser.t

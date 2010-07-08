@@ -1,5 +1,10 @@
 Change log for Web::Simple
 
+0.003 - Thu Jul 08 2010 14:48 UTC
+  - Experimentally use $_[ENV] for the PSGI env
+  - Add CSS::Declare
+  - Add more tags to HTML::Tags
+
 0.002 - Tue Dec 01 2009 00:30 UTC
   - fix dispatcher construction to recognise '' as no proto (we expected undef)
   - plackup support, as_psgi_app method

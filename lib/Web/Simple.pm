@@ -4,7 +4,7 @@ use strict;
 use warnings FATAL => 'all';
 use 5.008;
 
-our $VERSION = '0.002';
+our $VERSION = '0.003';
 
 sub setup_all_strictures {
   strict->import;
@@ -45,6 +45,7 @@ sub _export_into {
     *{"${app_package}::default_config"} = sub {
       $app_package->_setup_default_config(@_);
     };
+    *{"${app_package}::PSGI_ENV"} = sub () { -1 };
     *{"${app_package}::self"} = \${"${app_package}::self"};
     require Web::Simple::Application;
     unshift(@{"${app_package}::ISA"}, 'Web::Simple::Application');
@@ -183,23 +184,23 @@ is encountered in other code.
    # matches: GET /user/1.htm?show_details=1
    #          GET /user/1.htm
    sub (GET + /user/* + ?show_details~ + .htm|.html|.xhtml) {
-     shift; my ($user_id, $show_details) = @_;
+     my ($self, $user_id, $show_details) = @_;
      ...
    },
    # matches: POST /user?username=frew
    #          POST /user?username=mst&first_name=matt&last_name=trout
    sub (POST + /user + ?username=&*) {
-      shift; my ($username, $misc_params) = @_;
+      my ($self, $username, $misc_params) = @_;
      ...
    },
    # matches: DELETE /user/1/friend/2
    sub (DELETE + /user/*/friend/*) {
-     shift; my ($user_id, $friend_id) = @_;
+     my ($self, $user_id, $friend_id) = @_;
      ...
    },
    # matches: PUT /user/1?first_name=Matt&last_name=Trout
    sub (PUT + /user/* + ?first_name~&last_name~) {
-     shift; my ($user_id, $first_name, $last_name) = @_;
+     my ($self, $user_id, $first_name, $last_name) = @_;
      ...
    },
    sub (/user/*/...) {
@@ -213,7 +214,7 @@ is encountered in other code.
             },
             # matches: DELETE /user/1/role/1
             sub (DELETE + /role/*) {
-              my $role_id = shift;
+              my $role_id = $_[1];
               ...
             },
          ];
@@ -488,6 +489,16 @@ but it will be ignored. This is because the perl parser strips whitespace
 from subroutine prototypes, so this is equivalent to
 
   sub (GET+/user/*) {
+
+=head3 Accessing the PSGI env hash
+
+To gain the benefit of using some middleware, specifically
+Plack::Middleware::Session access to the ENV hash is needed. This is provided
+in arguments to the dispatched handler. You can access this hash with the
+exported +PSGI_ENV constant.
+
+    sub (GET + /foo + ?some_param=) {
+        my($self, $some_param, $env) = @_[0, 1, +PSGI_ENV];
 
 =head1 EXPORTED SUBROUTINES
 

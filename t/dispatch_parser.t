@@ -242,68 +242,174 @@ ok(
    );
 }
 
+#
+# query string
+#
+
 my $q = 'foo=FOO&bar=BAR1&baz=one+two&quux=QUUX1&quux=QUUX2'
-        .'&bar=BAR2&quux=QUUX3&evil=%2F';
+    .'&bar=BAR2&quux=QUUX3&evil=%2F';
 
 my %all_single = (
-  foo => 'FOO',
-  bar => 'BAR2',
-  baz => 'one two',
-  quux => 'QUUX3',
-  evil => '/',
+    foo => 'FOO',
+    bar => 'BAR2',
+    baz => 'one two',
+    quux => 'QUUX3',
+    evil => '/',
 );
 
 my %all_multi = (
-  foo => [ 'FOO' ],
-  bar => [ qw(BAR1 BAR2) ],
-  baz => [ 'one two' ],
-  quux => [ qw(QUUX1 QUUX2 QUUX3) ],
-  evil => [ '/' ],
+    foo => [ 'FOO' ],
+    bar => [ qw(BAR1 BAR2) ],
+    baz => [ 'one two' ],
+    quux => [ qw(QUUX1 QUUX2 QUUX3) ],
+    evil => [ '/' ],
 );
 
 foreach my $lose ('?foo=','?:foo=','?@foo=','?:@foo=') {
-  my $foo = $dp->parse_dispatch_specification($lose);
+    my $foo = $dp->parse_dispatch_specification($lose);
 
-  is_deeply(
-    [ $foo->({ QUERY_STRING => '' }) ],
-    [],
-    "${lose} fails with no query"
-  );
+    is_deeply(
+        [ $foo->({ QUERY_STRING => '' }) ],
+        [],
+        "${lose} fails with no query"
+    );
 
-  is_deeply(
-    [ $foo->({ QUERY_STRING => 'bar=baz' }) ],
-    [],
-    "${lose} fails with query missing foo key"
-  );
+    is_deeply(
+        [ $foo->({ QUERY_STRING => 'bar=baz' }) ],
+        [],
+        "${lose} fails with query missing foo key"
+    );
 }
 
 foreach my $win (
-  [ '?foo=' => 'FOO' ],
-  [ '?:foo=' => { foo => 'FOO' } ],
-  [ '?spoo~' => undef ],
-  [ '?:spoo~' => {} ],
-  [ '?@spoo~' => [] ],
-  [ '?:@spoo~' => { spoo => [] } ],
-  [ '?bar=' => 'BAR2' ],
-  [ '?:bar=' => { bar => 'BAR2' } ],
-  [ '?@bar=' => [ qw(BAR1 BAR2) ] ],
-  [ '?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
-  [ '?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
-  [ '?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
-  [ '?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
-  [ '?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
-  [ '?*' => \%all_single ],
-  [ '?@*' => \%all_multi ],
-  [ '?foo=&@*' => 'FOO', do { my %h = %all_multi; delete $h{foo}; \%h } ],
-  [ '?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
-  [ '?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+    [ '?foo=' => 'FOO' ],
+    [ '?:foo=' => { foo => 'FOO' } ],
+    [ '?spoo~' => undef ],
+    [ '?:spoo~' => {} ],
+    [ '?@spoo~' => [] ],
+    [ '?:@spoo~' => { spoo => [] } ],
+    [ '?bar=' => 'BAR2' ],
+    [ '?:bar=' => { bar => 'BAR2' } ],
+    [ '?@bar=' => [ qw(BAR1 BAR2) ] ],
+    [ '?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+    [ '?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+    [ '?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+    [ '?*' => \%all_single ],
+    [ '?@*' => \%all_multi ],
+    [ '?foo=&@*' => 'FOO', do { my %h = %all_multi; delete $h{foo}; \%h } ],
+    [ '?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+    [ '?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
 ) {
-  my ($spec, @res) = @$win;
-  my $match = $dp->parse_dispatch_specification($spec);
-#use Data::Dump::Streamer; warn Dump($match);
-  is_deeply(
-    [ $match->({ QUERY_STRING => $q }) ],
-    [ {}, @res ],
-    "${spec} matches correctly"
-  );
+    my ($spec, @res) = @$win;
+    my $match = $dp->parse_dispatch_specification($spec);
+    #use Data::Dump::Streamer; warn Dump($match);
+    is_deeply(
+        [ $match->({ QUERY_STRING => $q }) ],
+        [ {}, @res ],
+        "${spec} matches correctly"
+    );
+}
+
+#
+# /path/info/ + query string
+#
+
+foreach my $lose2 ('/foo/bar/+?foo=','/foo/bar/+?:foo=','/foo/bar/+?@foo=','/foo/bar/+?:@foo=') {
+    my $foo = $dp->parse_dispatch_specification($lose2);
+
+    is_deeply(
+        [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => '' }) ],
+        [ ],
+        "${lose2} fails with no query"
+    );
+
+    is_deeply(
+        [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => 'bar=baz' }) ],
+        [ ],
+        "${lose2} fails with query missing foo key"
+    );
+}
+
+foreach my $win2 (
+    [ '/foo/bar/+?foo=' => 'FOO' ],
+    [ '/foo/bar/+?:foo=' => { foo => 'FOO' } ],
+    [ '/foo/bar/+?spoo~' => undef ],
+    [ '/foo/bar/+?:spoo~' => {} ],
+    [ '/foo/bar/+?@spoo~' => [] ],
+    [ '/foo/bar/+?:@spoo~' => { spoo => [] } ],
+    [ '/foo/bar/+?bar=' => 'BAR2' ],
+    [ '/foo/bar/+?:bar=' => { bar => 'BAR2' } ],
+    [ '/foo/bar/+?@bar=' => [ qw(BAR1 BAR2) ] ],
+    [ '/foo/bar/+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar/+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+    [ '/foo/bar/+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar/+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar/+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+    [ '/foo/bar/+?*' => \%all_single ],
+    [ '/foo/bar/+?@*' => \%all_multi ],
+    [ '/foo/bar/+?foo=&@*' => 'FOO', do { my %h = %all_multi; delete $h{foo}; \%h } ],
+    [ '/foo/bar/+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+    [ '/foo/bar/+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+) {
+    my ($spec, @res) = @$win2;
+    my $match = $dp->parse_dispatch_specification($spec);
+    # use Data::Dump::Streamer; warn Dump($match);
+    is_deeply(
+        [ $match->({ PATH_INFO => '/foo/bar/', QUERY_STRING => $q }) ],
+        [ {}, @res ],
+        "${spec} matches correctly"
+    );
+}
+
+#
+# /path/info + query string
+#
+
+foreach my $lose3 ('/foo/bar+?foo=','/foo/bar+?:foo=','/foo/bar+?@foo=','/foo/bar+?:@foo=') {
+    my $foo = $dp->parse_dispatch_specification($lose3);
+
+    is_deeply(
+        [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => '' }) ],
+        [ ],
+        "${lose3} fails with no query"
+    );
+
+    is_deeply(
+        [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => 'bar=baz' }) ],
+        [ ],
+        "${lose3} fails with query missing foo key"
+    );
+}
+
+foreach my $win3 (
+    [ '/foo/bar+?foo=' => 'FOO' ],
+    [ '/foo/bar+?:foo=' => { foo => 'FOO' } ],
+    [ '/foo/bar+?spoo~' => undef ],
+    [ '/foo/bar+?:spoo~' => {} ],
+    [ '/foo/bar+?@spoo~' => [] ],
+    [ '/foo/bar+?:@spoo~' => { spoo => [] } ],
+    [ '/foo/bar+?bar=' => 'BAR2' ],
+    [ '/foo/bar+?:bar=' => { bar => 'BAR2' } ],
+    [ '/foo/bar+?@bar=' => [ qw(BAR1 BAR2) ] ],
+    [ '/foo/bar+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+    [ '/foo/bar+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+    [ '/foo/bar+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+    [ '/foo/bar+?*' => \%all_single ],
+    [ '/foo/bar+?@*' => \%all_multi ],
+    [ '/foo/bar+?foo=&@*' => 'FOO', do { my %h = %all_multi; delete $h{foo}; \%h } ],
+    [ '/foo/bar+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+    [ '/foo/bar+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+) {
+    my ($spec, @res) = @$win3;
+    my $match = $dp->parse_dispatch_specification($spec);
+    # use Data::Dump::Streamer; warn Dump($match);
+    is_deeply(
+        [ $match->({ PATH_INFO => '/foo/bar', QUERY_STRING => $q }) ],
+        [ {}, @res ],
+        "${spec} matches correctly"
+    );
 }

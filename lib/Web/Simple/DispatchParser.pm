@@ -187,7 +187,7 @@ sub _url_path_segment_match {
   my ($self) = @_;
   for ($_[1]) {
     # trailing / -> require / on end of URL
-    /\G(?:(?=\s)|$)/gc and
+    /\G(?:(?=[+|\)])|$)/gc and
       return '$';
     # word chars only -> exact path part match
     /\G(\w+)/gc and
@@ -258,7 +258,7 @@ sub _parse_param_handler {
       } else {
 
         # @foo= or foo= or @foo~ or foo~
-        
+
         /\G(\w+)/gc or $self->_blam('Expected parameter name');
 
         my $name = $1;
