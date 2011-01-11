@@ -10,9 +10,9 @@ use Test::More (
 {
   use Web::Simple 'EnvTest';
   package EnvTest;
-  dispatch {
+  sub dispatch_request  {
     sub (GET) {
-      my $env = @_[PSGI_ENV];
+      my $env = $_[PSGI_ENV];
       [ 200,
         [ "Content-type" => "text/plain" ],
         [ 'foo' ]

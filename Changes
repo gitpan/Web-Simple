@@ -1,5 +1,10 @@
 Change log for Web::Simple
 
+0.005 - Tue Jan 11 2011 22:09 UTC
+  - Redocument to cover changes
+  - Factor dispatcher code out into Web::Dispatch
+  - Support 'use Web::Simple;' to default to current package
+
 0.004 - Thu Jul 08 2010 22:08 UTC
   - Hide Plack Modules from PAUSE
 

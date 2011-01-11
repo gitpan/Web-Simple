@@ -66,17 +66,20 @@ sub summary_html {
 
 package Bloggery;
 
-default_config(
-  title => 'Bloggery',
-  posts_dir => $FindBin::Bin.'/posts',
-);
+has post_list => (is => 'lazy');
 
-sub post_list {
+sub default_config {
+  (
+    title => 'Bloggery',
+    posts_dir => $FindBin::Bin.'/posts',
+  );
+}
+
+sub _build_post_list {
   my ($self) = @_;
-  $self->{post_list}
-    ||= Bloggery::PostList->from_dir(
-          $self->config->{posts_dir}
-        );
+  Bloggery::PostList->from_dir(
+    $self->config->{posts_dir}
+  );
 }
 
 sub post {
@@ -84,18 +87,19 @@ sub post {
   $self->post_list->post($post);
 }
 
-dispatch {
-  sub (.html) {
-    response_filter { $self->render_html($_[1]) },
-  },
+sub dispatch_request {
+  my $self = shift;
   sub (GET + /) {
-    redispatch_to '/index.html';
+    redispatch_to '/index.html'
+  },
+  sub (.html) {
+    response_filter { $self->render_html(@_) }
   },
   sub (GET + /index) {
     $self->post_list
   },
   sub (GET + /*) {
-    $self->post($_[1]);
+    $self->post($_[1])
   },
   sub (GET) {
     [ 404, [ 'Content-type', 'text/plain' ], [ 'Not found' ] ]

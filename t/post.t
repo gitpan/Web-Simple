@@ -10,7 +10,7 @@ use Test::More (
 {
   use Web::Simple 'PostTest';
   package PostTest;
-  dispatch {
+  sub dispatch_request {
     sub (%:foo=&:bar~) {
       $_[1]->{bar} ||= 'EMPTY';
       [ 200,

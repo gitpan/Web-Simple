@@ -6,12 +6,12 @@ use Test::More qw(no_plan);
 require_ok 'examples/bloggery/bloggery.cgi';
 
 __END__
-use Test::More (
-  eval { require HTTP::Request::AsCGI }
-    ? 'no_plan'
-    : (skip_all => 'No HTTP::Request::AsCGI')
-);
-  
+#use Test::More (
+#  eval { require HTTP::Request::AsCGI }
+#    ? 'no_plan'
+##    : (skip_all => 'No HTTP::Request::AsCGI')
+#);
+use HTTP::Request::AsCGI;  
 
 use HTTP::Request::Common qw(GET POST);
 
@@ -23,7 +23,7 @@ my $app = Bloggery->new(
 
 sub run_request {
   my $request = shift;
-  my $c = HTTP::Request::AsCGI->new($request)->setup;
+  my $c = HTTP::Request::AsCGI->new($request, SCRIPT_NAME=> $0)->setup;
   $app->run;
   $c->restore;
   return $c->response;

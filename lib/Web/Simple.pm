@@ -1,52 +1,28 @@
 package Web::Simple;
 
-use strict;
-use warnings FATAL => 'all';
+use strictures 1;
 use 5.008;
+use warnings::illegalproto ();
+use Moo ();
+use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.004';
-
-sub setup_all_strictures {
-  strict->import;
-  warnings->import(FATAL => 'all');
-}
-
-sub setup_dispatch_strictures {
-  setup_all_strictures();
-  warnings->unimport('syntax');
-  warnings->import(FATAL => qw(
-    ambiguous bareword digit parenthesis precedence printf
-    prototype qw reserved semicolon
-  ));
-}
+our $VERSION = '0.005';
 
 sub import {
-  setup_dispatch_strictures();
   my ($class, $app_package) = @_;
+  $app_package ||= caller;
   $class->_export_into($app_package);
+  eval "package $app_package; use Web::Dispatch::Wrapper; use Moo; 1"
+    or die "Failed to setup app package: $@";
+  strictures->import;
+  warnings::illegalproto->unimport;
 }
 
 sub _export_into {
   my ($class, $app_package) = @_;
   {
     no strict 'refs';
-    *{"${app_package}::dispatch"} = sub (&) {
-      $app_package->_setup_dispatcher([ $_[0]->() ]);
-    };
-    *{"${app_package}::response_filter"} = sub (&) {
-      $app_package->_construct_response_filter($_[0]);
-    };
-    *{"${app_package}::redispatch_to"} = sub {
-      $app_package->_construct_redispatch($_[0]);
-    };
-    *{"${app_package}::subdispatch"} = sub ($) {
-      $app_package->_construct_subdispatch($_[0]);
-    };
-    *{"${app_package}::default_config"} = sub {
-      $app_package->_setup_default_config(@_);
-    };
     *{"${app_package}::PSGI_ENV"} = sub () { -1 };
-    *{"${app_package}::self"} = \${"${app_package}::self"};
     require Web::Simple::Application;
     unshift(@{"${app_package}::ISA"}, 'Web::Simple::Application');
   }
@@ -74,97 +50,83 @@ change things at all. Not yet. Sorry.
 
 =head1 SYNOPSIS
 
-  #!/usr/bin/perl
+  #!/usr/bin/env perl
 
   use Web::Simple 'HelloWorld';
 
   {
     package HelloWorld;
 
-    dispatch {
+    sub dispatch_request {
       sub (GET) {
         [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
       },
       sub () {
         [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
       }
-    };
+    }
   }
 
   HelloWorld->run_if_script;
 
-If you save this file into your cgi-bin as hello-world.cgi and then visit
+If you save this file into your cgi-bin as C<hello-world.cgi> and then visit:
 
   http://my.server.name/cgi-bin/hello-world.cgi/
 
 you'll get the "Hello world!" string output to your browser. For more complex
-examples and non-CGI deployment, see below. To get help with Web::Simple,
+examples and non-CGI deployment, see below. To get help with L<Web::Simple>,
 please connect to the irc.perl.org IRC network and join #web-simple.
 
-=head1 WHY?
+=head1 DESCRIPTION
 
-Web::Simple was originally written to form part of my Antiquated Perl talk for
-Italian Perl Workshop 2009, but in writing the bloggery example I realised
-that having a bare minimum system for writing web applications that doesn't
-drive me insane was rather nice and decided to spend my attempt at nanowrimo
-for 2009 improving and documenting it to the point where others could use it.
-
-The philosophy of Web::Simple is to keep to an absolute bare minimum, for
+The philosophy of L<Web::Simple> is to keep to an absolute bare minimum for
 everything. It is not designed to be used for large scale applications;
 the L<Catalyst> web framework already works very nicely for that and is
 a far more mature, well supported piece of software.
 
 However, if you have an application that only does a couple of things, and
-want to not have to think about complexities of deployment, then Web::Simple
+want to not have to think about complexities of deployment, then L<Web::Simple>
 might be just the thing for you.
 
-The Antiquated Perl talk can be found at L<http://www.shadowcat.co.uk/archive/conference-video/>.
-
-=head1 DESCRIPTION
-
-The only public interface the Web::Simple module itself provides is an
-import based one -
+The only public interface the L<Web::Simple> module itself provides is an
+C<import> based one:
 
   use Web::Simple 'NameOfApplication';
 
-This imports 'strict' and 'warnings FATAL => "all"' into your code as well,
-so you can skip the usual
+This sets up your package (in this case "NameOfApplication" is your package)
+so that it inherits from L<Web::Simple::Application> and imports L<strictures>,
+as well as installs a C<PSGI_ENV> constant for convenience, as well as some 
+other subroutines.
+
+Importing L<strictures> will automatically make your code use the C<strict> and
+C<warnings> pragma, so you can skip the usual:
 
   use strict;
-  use warnings;
+  use warnings FATAL => 'aa';
 
 provided you 'use Web::Simple' at the top of the file. Note that we turn
 on *fatal* warnings so if you have any warnings at any point from the file
 that you did 'use Web::Simple' in, then your application will die. This is,
 so far, considered a feature.
 
-Calling the import also makes NameOfApplication isa Web::Simple::Application
-- i.e. does the equivalent of
+When we inherit from L<Web::Simple::Application> we also use <Moo>, which is
+the the equivalent of:
 
   {
     package NameOfApplication;
-    use base qw(Web::Simple::Application);
+    use Moo;
+    extends 'Web::Simple::Application';
   }
 
-It also exports the following subroutines:
+So you can use L<Moo> features in your application, such as creating attributes
+using the C<has> subroutine, etc.  Please see the documentation for L<Moo> for
+more information.
 
-  default_config(
-    key => 'value',
-    ...
-  );
-
-  dispatch { sub (...) { ... }, ... };
+It also exports the following subroutines for use in dispatchers:
 
   response_filter { ... };
 
   redispatch_to '/somewhere';
-
-  subdispatch sub (...) { ... }
-
-and creates a $self global variable in your application package, so you can
-use $self in dispatch subs without violating strict (Web::Simple::Application
-arranges for dispatch subroutines to have the correct $self in scope when
-this happens).
 
 Finally, import sets
 
@@ -178,9 +140,15 @@ is encountered in other code.
 
 =head1 DISPATCH STRATEGY
 
+L<Web::Simple> despite being straightforward to use, has a powerful system
+for matching all sorts of incoming URLs to one or more subroutines.  These
+subroutines can be simple actions to take for a given URL, or something
+more complicated, including entire L<Plack> applications, L<Plack::Middleware>
+and nested subdispatchers.
+
 =head2 Examples
 
- dispatch {
+ sub dispatch_request {
    # matches: GET /user/1.htm?show_details=1
    #          GET /user/1.htm
    sub (GET + /user/* + ?show_details~ + .htm|.html|.xhtml) {
@@ -204,94 +172,119 @@ is encountered in other code.
      ...
    },
    sub (/user/*/...) {
-      my $user_id = $_[1];
-      subdispatch sub {
-         [
-            # matches: PUT /user/1/role/1
-            sub (PUT + /role/*) {
-              my $role_id = $_[1];
-              ...
-            },
-            # matches: DELETE /user/1/role/1
-            sub (DELETE + /role/*) {
-              my $role_id = $_[1];
-              ...
-            },
-         ];
-      }
+     my $user_id = $_[1];
+     # matches: PUT /user/1/role/1
+     sub (PUT + /role/*) {
+       my $role_id = $_[1];
+       ...
+     },
+     # matches: DELETE /user/1/role/1
+     sub (DELETE + /role/*) {
+       my $role_id = $_[1];
+       ...
+     },
    },
  }
 
-=head2 Description of the dispatcher object
+=head2 The dispatch cycle
 
-Web::Simple::Dispatcher objects have three components:
+At the beginning of a request, your app's dispatch_request method is called
+with the PSGI $env as an argument. You can handle the request entirely in
+here and return a PSGI response arrayref if you want:
 
-=over 4
-
-=item * match - an optional test if this dispatcher matches the request
-
-=item * call - a routine to call if this dispatcher matches (or has no match)
-
-=item * next - the next dispatcher to call
-
-=back
-
-When a dispatcher is invoked, it checks its match routine against the
-request environment. The match routine may provide alterations to the
-request as a result of matching, and/or arguments for the call routine.
-
-If no match routine has been provided then Web::Simple treats this as
-a success, and supplies the request environment to the call routine as
-an argument.
-
-Given a successful match, the call routine is now invoked in list context
-with any arguments given to the original dispatch, plus any arguments
-provided by the match result.
-
-If this routine returns (), Web::Simple treats this identically to a failure
-to match.
-
-If this routine returns a Web::Simple::Dispatcher, the environment changes
-are merged into the environment and the new dispatcher's next pointer is
-set to our next pointer.
-
-If this routine returns anything else, that is treated as the end of dispatch
-and the value is returned.
-
-On a failed match, Web::Simple invokes the next dispatcher with the same
-arguments and request environment passed to the current one. On a successful
-match that returned a new dispatcher, Web::Simple invokes the new dispatcher
-with the same arguments but the modified request environment.
-
-=head2 How Web::Simple builds dispatcher objects for you
-
-In the case of the Web::Simple L</dispatch> export the match is constructed
-from the subroutine prototype - i.e.
-
-  sub (<match specification>) {
-    <call code>
+  sub dispatch_request {
+    my ($self, $env) = @_;
+    [ 404, [ 'Content-type' => 'text/plain' ], [ 'Amnesia == fail' ] ]
   }
 
-and the 'next' pointer is populated with the next element of the array,
-expect for the last element, which is given a next that will throw a 500
-error if none of your dispatchers match. If you want to provide something
-else as a default, a routine with no match specification always matches, so -
+However, generally, instead of that, you return a set of dispatch subs:
 
-  sub () {
-    [ 404, [ 'Content-type', 'text/plain' ], [ 'Error: Not Found' ] ]
-  }
-
-will produce a 404 result instead of a 500 by default. You can also override
-the L<Web::Simple::Application/_build_final_dispatcher> method in your app.
-
-Note that the code in the subroutine is executed as a -method- on your
-application object, so if your match specification provides arguments you
-should unpack them like so:
-
-  sub (<match specification>) {
-    my ($self, @args) = @_;
+  sub dispatch_request {
+    my $self = shift;
+    sub (/) { redispatch_to '/index.html' },
+    sub (/user/*) { $self->show_user($_[1]) },
     ...
   }
+
+If you return a subroutine with a prototype, the prototype is treated
+as a match specification - and if the test is passed, the body of the
+sub is called as a method any matched arguments (see below for more details).
+
+You can also return a plain subroutine which will be called with just $env
+- remember that in this case if you need $self you -must- close over it.
+
+If you return a normal object, L<Web::Simple> will simply return it upwards on
+the assumption that a response_filter (or some arbitrary L<Plack::Middleware>)
+somewhere will convert it to something useful.  This allows:
+
+  sub dispatch_request {
+    my $self = shift;
+    sub (.html) { response_filter { $self->render_zoom($_[0]) } },
+    sub (/user/*) { $self->users->get($_[1]) },
+  }
+
+to render a user object to HTML, if there is an incoming URL such as:
+
+  http://myweb.org/user/111.html
+
+This works because as we descend down the dispachers, we first match
+C<sub (.html)>, which adds a C<response_filter> (basically a specialized routine
+that follows the L<Plack::Middleware> specification), and then later we also
+match C<sub (/user/*)> which gets a user and returns that as the response.
+This user object 'bubbles up' through all the wrapping middleware until it hits
+the C<response_filter> we defined, after which the return is converted to a
+true html response.
+
+However, two types of object are treated specially - a Plack::App object
+will have its C<->to_app> method called and be used as a dispatcher:
+
+  sub dispatch_request {
+    my $self = shift;
+    sub (/static/...) { Plack::App::File->new(...) },
+    ...
+  }
+
+A Plack::Middleware object will be used as a filter for the rest of the
+dispatch being returned into:
+
+  ## responds to /admin/track_usage AND /admin/delete_accounts
+
+  sub dispatch_request {
+    my $self = shift;
+    sub (/admin/**) {
+      Plack::Middleware::Session->new(%opts);
+    },
+    sub (/admin/track_usage) {
+      ## something that needs a session
+    },
+    sub (/admin/delete_accounts) {
+      ## something else that needs a session
+    },
+  }
+
+Note that this is for the dispatch being -returned- to, so if you want to
+provide it inline you need to do:
+
+  ## ALSO responds to /admin/track_usage AND /admin/delete_accounts
+
+  sub dispatch_request {
+    my $self = shift;
+    sub (/admin/...) {
+      sub {
+        Plack::Middleware::Session->new(%opts);
+      },
+      sub (/track_usage) {
+        ## something that needs a session
+      },
+      sub (/delete_accounts) {
+        ## something else that needs a session
+      },
+    }
+  }
+
+And that's it - but remember that all this happens recursively - it's
+dispatchers all the way down.  A URL incoming pattern will run all matching
+dispatchers and then hit all added filters or L<Plack::Middleware>.
 
 =head2 Web::Simple match specifications
 
@@ -339,10 +332,9 @@ Finally,
 
   sub (/foo/...) {
 
-will match /foo/ on the beginning of the path -and- strip it, much like
-.html strips the extension. This is designed to be used to construct
-nested dispatch structures, but can also prove useful for having e.g. an
-optional language specification at the start of a path.
+Will match /foo/ on the beginning of the path -and- strip it. This is designed
+to be used to construct nested dispatch structures, but can also prove useful
+for having e.g. an optional language specification at the start of a path.
 
 Note that the '...' is a "maybe something here, maybe not" so the above
 specification will match like this:
@@ -355,8 +347,8 @@ specification will match like this:
 
   sub (.html) {
 
-will match and strip .html from the path (assuming the subroutine itself
-returns something, of course). This is normally used for rendering - e.g.
+will match .html from the path (assuming the subroutine itself returns
+something, of course). This is normally used for rendering - e.g.
 
   sub (.html) {
     response_filter { $self->render_html($_[1]) }
@@ -366,8 +358,7 @@ Additionally,
 
   sub (.*) {
 
-will match any extension and supplies the stripped extension as a match
-argument.
+will match any extension and supplies the extension as a match argument.
 
 =head3 Query and body parameter matches
 
@@ -397,7 +388,12 @@ separated by the & character. The arguments added to the request are
 one per non-:/* parameter (scalar for normal, arrayref for multiple),
 plus if any :/* specs exist a hashref containing those values.
 
-So, to match a page parameter with an optional order_by parameter one
+Please note that if you specify a multiple type parameter match, you are
+ensured of getting an arrayref for the value, EVEN if the current incoming
+request has only one value.  However if a parameter is specified as single
+and multiple values are found, the last one will be used.
+
+For example to match a page parameter with an optional order_by parameter one
 would write:
 
   sub (?page=&order_by~) {
@@ -411,10 +407,7 @@ would write:
 
 to implement paging and ordering against a L<DBIx::Class::ResultSet> object.
 
-Note that if a parameter is specified as single and multiple values are found,
-the last one will be used.
-
-To get all parameters as a hashref of arrayrefs, write:
+Another Example: To get all parameters as a hashref of arrayrefs, write:
 
   sub(?@*) {
     my ($self, $params) = @_;
@@ -433,6 +426,11 @@ You can also mix these, so:
 where $bar is an arrayref (possibly an empty one), and $params contains
 arrayref values for all parameters -not- mentioned and a scalar value for
 the 'coffee' parameter.
+
+Note, in the case where you combine arrayref, single parameter and named
+hashref style, the arrayref and single parameters will appear in C<@_> in the
+order you defined them in the protoype, but all hashrefs will merge into a 
+single C<$params>, as in the example above.
 
 =head3 Combining matches
 
@@ -467,17 +465,17 @@ and
 
 are equivalent, but
 
-  sub ((GET + .html) | (POST + .html)) {
+  sub ((GET + /admin/...) | (POST + /admin/...)) {
 
 and
 
-  sub (GET + .html | POST + .html) {
+  sub (GET + /admin/... | POST + /admin/...) {
 
 are not - the latter is equivalent to
 
-  sub (GET + (.html|POST) + .html) {
+  sub (GET + (/admin/...|POST) + /admin/...) {
 
-which will never match.
+which will never match!
 
 =head3 Whitespace
 
@@ -492,81 +490,34 @@ from subroutine prototypes, so this is equivalent to
 
 =head3 Accessing the PSGI env hash
 
-To gain the benefit of using some middleware, specifically
-Plack::Middleware::Session access to the ENV hash is needed. This is provided
-in arguments to the dispatched handler. You can access this hash with the
-exported +PSGI_ENV constant.
+In some cases you may wish to get the raw PSGI env hash - to do this,
+you can either use a plain sub -
 
-    sub (GET + /foo + ?some_param=) {
-        my($self, $some_param, $env) = @_[0, 1, +PSGI_ENV];
+  sub {
+    my ($env) = @_;
+    ...
+  }
+
+or use the PSGI_ENV constant exported to retrieve it:
+
+  sub (GET + /foo + ?some_param=) {
+    my $param = $_[1];
+    my $env = $_[PSGI_ENV];
+  }
+
+but note that if you're trying to add a middleware, you should simply use
+Web::Simple's direct support for doing so.
 
 =head1 EXPORTED SUBROUTINES
-
-=head2 default_config
-
-  default_config(
-    one_key => 'foo',
-    another_key => 'bar',
-  );
-
-  ...
-
-  $self->config->{one_key} # 'foo'
-
-This creates the default configuration for the application, by creating a
-
-  sub _default_config {
-     return (one_key => 'foo', another_key => 'bar');
-  }
-
-in the application namespace when executed. Note that this means that
-you should only run default_config once - calling it a second time will
-cause an exception to be thrown.
-
-=head2 dispatch
-
-  dispatch {
-    sub (GET) {
-      [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
-    },
-    sub () {
-      [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
-    }
-  };
-
-The dispatch subroutine calls NameOfApplication->_setup_dispatcher with
-the return value of the block passed to it, which then creates your Web::Simple
-application's dispatcher from these subs. The prototype of each subroutine
-is expected to be a Web::Simple dispatch specification (see
-L</DISPATCH SPECIFICATIONS> below for more details), and the body of the
-subroutine is the code to execute if the specification matches.
-
-Each dispatcher is given the dispatcher constructed from the next subroutine
-returned as its next dispatcher, except for the final subroutine, which
-is given the return value of NameOfApplication->_build_final_dispatcher
-as its next dispatcher (by default this returns a 500 error response).
-
-See L</DISPATCH STRATEGY> below for details on how the Web::Simple dispatch
-system uses the return values of these subroutines to determine how to
-continue, alter or abort dispatch.
-
-Note that _setup_dispatcher creates a
-
-  sub _dispatcher {
-    return <root dispatcher object here>;
-  }
-
-method in your class so as with default_config, calling dispatch a second time
-will result in an exception.
 
 =head2 response_filter
 
   response_filter {
     # Hide errors from the user because we hates them, preciousss
-    if (ref($_[1]) eq 'ARRAY' && $_[1]->[0] == 500) {
-      $_[1] = [ 200, @{$_[1]}[1..$#{$_[1]}] ];
+    if (ref($_[0]) eq 'ARRAY' && $_[0]->[0] == 500) {
+      $_[0] = [ 200, @{$_[0]}[1..$#{$_[0]}] ];
     }
-    return $_[1];
+    return $_[0];
   };
 
 The response_filter subroutine is designed for use inside dispatch subroutines.
@@ -589,31 +540,61 @@ It creates and returns a special dispatcher that always matches, and instead
 of continuing dispatch re-delegates it to the start of the dispatch process,
 but with the path of the request altered to the supplied URL.
 
-Thus if you receive a POST to '/some/url' and return a redipstch to
+Thus if you receive a POST to '/some/url' and return a redispatch to
 '/other/url', the dispatch behaviour will be exactly as if the same POST
 request had been made to '/other/url' instead.
 
-=head2 subdispatch
+Note, this is not the same as returning an HTTP 3xx redirect as a response;
+rather it is a much more efficient internal process.  
 
-  subdispatch sub (/user/*/) {
-    my $u = $self->user($_[1]);
+=head1 CHANGES BETWEEN RELEASES
+
+=head2 Changes between 0.004 and 0.005
+
+=over 4
+
+=item * dispatch {} replaced by declaring a dispatch_request method
+
+dispatch {} has gone away - instead, you write:
+
+  sub dispatch_request {
+    my $self = shift;
+    sub (GET /foo/) { ... },
+    ...
+  }
+
+Note that this method is still -returning- the dispatch code - just like
+dispatch did.
+
+Also note that you need the 'my $self = shift' since the magic $self
+variable went away.
+
+=item * the magic $self variable went away.
+
+Just add 'my $self = shift;' while writing your 'sub dispatch_request {'
+like a normal perl method.
+
+=item * subdispatch deleted - all dispatchers can now subdispatch
+
+In earlier releases you needed to write:
+
+  subdispatch sub (/foo/...) {
+    ...
     [
-      sub (GET) { $u },
-      sub (DELETE) { $u->delete },
+      sub (GET /bar/) { ... },
+      ...
     ]
   }
 
-The subdispatch subroutine is designed for use in dispatcher construction.
+As of 0.005, you can instead write simply:
 
-It creates a dispatcher which, if it matches, treats its return value not
-as a final value but an arrayref of dispatch specifications such as could
-be passed to the dispatch subroutine itself. These are turned into a dispatcher
-which is then invoked. Any changes the match makes to the request are in
-scope for this inner dispatcher only - so if the initial match is a
-destructive one like .html the full path will be restored if the
-subdispatch fails.
-
-=head1 CHANGES BETWEEN RELEASES
+  sub (/foo/...) {
+    ...
+    (
+      sub (GET /bar/) { ... },
+      ...
+    )
+  }
 
 =head2 Changes since Antiquated Perl
 
@@ -636,6 +617,16 @@ to
 should work fine.
 
 =back
+
+=head1 DEVELOPMENT HISTORY
+
+Web::Simple was originally written to form part of my Antiquated Perl talk for
+Italian Perl Workshop 2009, but in writing the bloggery example I realised
+that having a bare minimum system for writing web applications that doesn't
+drive me insane was rather nice and decided to spend my attempt at nanowrimo
+for 2009 improving and documenting it to the point where others could use it.
+
+The Antiquated Perl talk can be found at L<http://www.shadowcat.co.uk/archive/conference-video/>.
 
 =head1 COMMUNITY AND SUPPORT
 
@@ -663,7 +654,7 @@ None required yet. Maybe this module is perfect (hahahahaha ...).
 
 =head1 COPYRIGHT
 
-Copyright (c) 2009 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
+Copyright (c) 2010 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
 as listed above.
 
 =head1 LICENSE

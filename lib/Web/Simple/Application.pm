@@ -1,248 +1,44 @@
 package Web::Simple::Application;
 
-use strict;
-use warnings FATAL => 'all';
+use Moo;
 
-{
-  package Web::Simple::Dispatcher;
-
-  sub _is_dispatcher {
-    ref($_[1])
-      and "$_[1]" =~ /\w+=[A-Z]/
-      and $_[1]->isa(__PACKAGE__);
+has 'config' => (
+  is => 'ro',
+  default => sub {
+    my ($self) = @_;
+    +{ $self->default_config }
+  },
+  trigger => sub {
+    my ($self, $value) = @_;
+    my %default = $self->default_config;
+    my @not = grep !exists $value->{$_}, keys %default;
+    @{$value}{@not} = @default{@not};
   }
+);
 
-  sub next {
-    @_ > 1
-      ? $_[0]->{next} = $_[1]
-      : shift->{next}
-  }
+sub default_config { () }
 
-  sub set_next {
-    $_[0]->{next} = $_[1];
-    $_[0]
-  }
+has '_dispatcher' => (is => 'lazy');
 
-  sub dispatch {
-    my ($self, $env, @args) = @_;
-    my $next = $self->_has_match ? $self->next : undef;
-    if (my ($env_delta, @match) = $self->_match_against($env)) {
-      if (my ($result) = $self->_execute_with(@args, @match, $env)) {
-        if ($self->_is_dispatcher($result)) {
-          $next = $result->set_next($next);
-          $env = { %$env, %$env_delta };
-        } else {
-          return $result;
-        }
-      }
-    }
-    return () unless $next;
-    return $next->dispatch($env, @args);
-  }
-
-  sub call {
-    @_ > 1
-      ? $_[0]->{call} = $_[1]
-      : shift->{call}
-  }
-
-  sub _has_match { $_[0]->{match} }
-
-  sub _match_against {
-     return ({}, $_[1]) unless $_[0]->{match};
-     $_[0]->{match}->($_[1]);
-  }
-
-  sub _execute_with {
-    $_[0]->{call}->(@_);
-  }
-}
-
-sub new {
-  my ($class, $data) = @_;
-  my $config = { $class->_default_config, %{($data||{})->{config}||{}} };
-  my $new = bless({ config => $config }, $class);
-  $new->BUILDALL($data);
-  $new;
-}
-
-sub BUILDALL {
-  my ($self, $data) = @_;
-  my $targ = ref($self);
-  my @targ;
-  while ($targ->isa(__PACKAGE__) and $targ ne __PACKAGE__) {
-    push(@targ, "${targ}::BUILD")
-      if do { no strict 'refs'; defined *{"${targ}::BUILD"}{CODE} };
-    my @targ_isa = do { no strict 'refs'; @{"${targ}::ISA"} };
-    die "${targ} uses Multiple Inheritance: ISA is: ".join ', ', @targ_isa
-      if @targ_isa > 1;
-    $targ = $targ_isa[0];
-  }
-  $self->$_($data) for reverse @targ;
-  return;
-}
-
-sub _setup_default_config {
-  my $class = shift;
-  {
-    no strict 'refs';
-    if (${"${class}::_default_config"}{CODE}) {
-      $class->_cannot_call_twice('_setup_default_config', 'default_config');
-    }
-  }
-  my @defaults = (@_, $class->_default_config);
-  {
-    no strict 'refs';
-    *{"${class}::_default_config"} = sub { @defaults };
-  }
-}
-
-sub _default_config { () }
-
-sub config {
-  shift->{config};
-}
-
-sub _construct_response_filter {
-  my $code = $_[1];
-  $_[0]->_build_dispatcher({
-    call => sub {
-      my ($d, $self, $env) = (shift, shift, shift);
-      my @next = $d->next->dispatch($env, $self, @_);
-      return unless @next;
-      $self->_run_with_self($code, @next);
-    },
-  });
-}
-
-sub _construct_redispatch {
-  my ($self, $new_path) = @_;
-  $self->_build_dispatcher({
-    call => sub {
-      shift;
-      my ($self, $env) = @_;
-      $self->_dispatch({ %{$env}, PATH_INFO => $new_path })
-    }
-  })
-}
-
-sub _build_dispatch_parser {
-  require Web::Simple::DispatchParser;
-  return Web::Simple::DispatchParser->new;
-}
-
-sub _cannot_call_twice {
-  my ($class, $method, $sub) = @_;
-  my $error = "Cannot call ${method} twice for ${class}";
-  if ($sub) {
-    $error .= " - did you call Web::Simple's ${sub} export twice?";
-  }
-  die $error;
-}
-
-sub _setup_dispatcher {
-  my ($class, $dispatch_specs) = @_;
-  {
-    no strict 'refs';
-    if (${"${class}::_dispatcher"}{CODE}) {
-      $class->_cannot_call_twice('_setup_dispatcher', 'dispatch');
-    }
-  }
-  my $chain = $class->_build_dispatch_chain(
-    [ @$dispatch_specs, $class->_build_final_dispatcher ]
+sub _build__dispatcher {
+  my $self = shift;
+  require Web::Dispatch;
+  require Web::Simple::DispatchNode;
+  my $final = $self->_build_final_dispatcher;
+  Web::Dispatch->new(
+    app => sub { $self->dispatch_request(@_), $final },
+    node_class => 'Web::Simple::DispatchNode',
+    node_args => { app_object => $self }
   );
-  {
-    no strict 'refs';
-    *{"${class}::_dispatcher"} = sub { $chain };
-  }
-}
-
-sub _construct_subdispatch {
-  my ($class, $dispatch_spec) = @_;
-  my $disp = $class->_build_dispatcher_from_spec($dispatch_spec);
-  my $call = $disp->call;
-  $disp->call(sub {
-    my @res = $call->(@_);
-    return unless @res;
-    my $chain = $class->_build_dispatch_chain(@res);
-    return $class->_build_dispatcher({
-      call => sub {
-        my ($d, $self, $env) = (shift, shift, shift);
-        return $chain->dispatch($env, $self, @_);
-      }
-    });
-  });
-  return $class->_build_dispatcher({
-    call => sub {
-      my ($d, $self, $env) = (shift, shift, shift);
-      my @sub = $disp->dispatch($env, $self, @_);
-      return @sub if @sub;
-      return unless (my $next = $d->next);
-      return $next->dispatch($env, $self, @_);
-    },
-  });
-}
-
-sub _build_dispatcher_from_spec {
-  my ($class, $spec) = @_;
-  return $spec unless ref($spec) eq 'CODE';
-  my $proto = prototype $spec;
-  my $parser = $class->_build_dispatch_parser;
-  my $matcher = (
-    defined($proto) && length($proto)
-      ? $parser->parse_dispatch_specification($proto)
-      : sub { ({}, $_[1]) }
-  );
-  return $class->_build_dispatcher({
-    match => $matcher,
-    call => sub { shift;
-      shift->_run_with_self($spec, @_)
-    },
-  });
-}
-
-sub _build_dispatch_chain {
-  my ($class, $dispatch_specs) = @_;
-  my ($root, $last);
-  foreach my $dispatch_spec (@$dispatch_specs) {
-    my $new = $class->_build_dispatcher_from_spec($dispatch_spec);
-    $root ||= $new;
-    $last = $last ? $last->next($new) : $new;
-  }
-  return $root;
-}
-
-sub _build_dispatcher {
-  bless($_[1], 'Web::Simple::Dispatcher');
 }
 
 sub _build_final_dispatcher {
-  shift->_build_dispatcher({
-    call => sub {
-      [
-        404, [ 'Content-type', 'text/plain' ],
-        [ 'Not found' ]
-      ]
-    }
-  })
-}
-
-sub _dispatch {
-  my ($self, $env) = @_;
-  $self->_dispatcher->dispatch($env, $self);
-}
-
-sub _run_with_self {
-  my ($self, $run, @args) = @_;
-  my $class = ref($self);
-  no strict 'refs';
-  local *{"${class}::self"} = \$self;
-  $self->$run(@args);
+  [ 404, [ 'Content-type', 'text/plain' ], [ 'Not found' ] ]
 }
 
 sub run_if_script {
-  # ->as_psgi_app is true for require() but also works for plackup
-  return $_[0]->as_psgi_app if caller(1);
+  # ->to_psgi_app is true for require() but also works for plackup
+  return $_[0]->to_psgi_app if caller(1);
   my $self = ref($_[0]) ? $_[0] : $_[0]->new;
   $self->run(@_);
 }
@@ -250,18 +46,18 @@ sub run_if_script {
 sub _run_cgi {
   my $self = shift;
   require Plack::Server::CGI;
-  Plack::Server::CGI->run($self->as_psgi_app);
+  Plack::Server::CGI->run($self->to_psgi_app);
 }
 
 sub _run_fcgi {
   my $self = shift;
   require Plack::Server::FCGI;
-  Plack::Server::FCGI->run($self->as_psgi_app);
+  Plack::Server::FCGI->run($self->to_psgi_app);
 }
 
-sub as_psgi_app {
-  my $self = shift;
-  ref($self) ? sub { $self->_dispatch(@_) } : sub { $self->new->_dispatch(@_) }
+sub to_psgi_app {
+  my $self = ref($_[0]) ? $_[0] : $_[0]->new;
+  $self->_dispatcher->to_app;
 }
 
 sub run {
@@ -271,7 +67,11 @@ sub run {
   } elsif ($ENV{GATEWAY_INTERFACE}) {
     return $self->_run_cgi;
   }
-  my $path = shift(@ARGV) or die "No path passed - use $0 / for root";
+  unless (@ARGV && $ARGV[0] =~ m{^/}) {
+    return $self->_run_cli(@ARGV);
+  }
+
+  my $path = shift @ARGV;
 
   require HTTP::Request::Common;
   require Plack::Test;
@@ -279,8 +79,192 @@ sub run {
 
   my $request = GET($path);
   my $response;
-  Plack::Test::test_psgi($self->as_psgi_app, sub { $response = shift->($request) });
+  Plack::Test::test_psgi($self->to_psgi_app, sub { $response = shift->($request) });
   print $response->as_string;
 }
 
+sub _run_cli {
+  my $self = shift;
+  die $self->_cli_usage;
+}
+
+sub _cli_usage {
+  "To run this script in CGI test mode, pass a URL path beginning with /:\n".
+  "\n".
+  "  $0 /some/path\n".
+  "  $0 /\n"
+}
+
 1;
+
+=head1 NAME
+
+Web::Simple::Application - A base class for your Web-Simple application
+
+=head1 DESCRIPTION
+
+This is a base class for your L<Web::Simple> application.  You probably don't
+need to construct this class yourself, since L<Web::Simple> does the 'heavy
+lifting' for you in that regards.
+
+=head1 METHODS
+
+This class exposes the following public methods.
+
+=head2 default_config
+
+Merges with the C<config> initializer to provide configuration information for
+your application.  For example:
+
+  sub default_config {
+    (
+      title => 'Bloggery',
+      posts_dir => $FindBin::Bin.'/posts',
+    );
+  }
+
+Now, the C<config> attribute of C<$self>  will be set to a HashRef
+containing keys 'title' and 'posts_dir'.
+
+The keys from default_config are merged into any config supplied, so
+if you construct your application like:
+
+  MyWebSimpleApp::Web->new(
+    config => { title => 'Spoon', environment => 'dev' }
+  )
+
+then C<config> will contain:
+
+  {
+    title => 'Spoon',
+    posts_dir => '/path/to/myapp/posts',
+    environment => 'dev'
+  }
+
+=head2 run_if_script
+
+The run_if_script method is designed to be used at the end of the script
+or .pm file where your application class is defined - for example:
+
+  ## my_web_simple_app.pl
+  #!/usr/bin/env perl
+  use Web::Simple 'HelloWorld';
+
+  {
+    package HelloWorld;
+
+    sub dispatch_request {
+      sub (GET) {
+        [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
+      },
+      sub () {
+        [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
+      }
+    }
+  }
+
+  HelloWorld->run_if_script;
+
+This returns a true value, so your file is now valid as a module - so
+
+  require 'my_web_simple_app.pl';
+
+  my $hw = HelloWorld->new;
+
+will work fine (and you can rename it to lib/HelloWorld.pm later to make it
+a real use-able module).
+
+However, it detects if it's being run as a script (via testing $0) and if
+so attempts to do the right thing.
+
+If run under a CGI environment, your application will execute as a CGI.
+
+If run under a FastCGI environment, your application will execute as a
+FastCGI process (this works both for dynamic shared-hosting-style FastCGI
+and for apache FastCgiServer style setups).
+
+If run from the commandline with a URL path, it runs a GET request against
+that path -
+
+  $ perl -Ilib examples/hello-world/hello-world.cgi /
+  200 OK
+  Content-Type: text/plain
+  
+  Hello world!
+
+Additionally, you can treat the file as though it were a standard PSGI
+application file (*.psgi).  For example you can start up up with C<plackup>
+
+  plackup my_web_simple_app.pl
+
+or C<starman>
+
+  starman my_web_simple_app.pl
+
+=head2 to_psgi_app
+
+This method is called by L</run_if_script> to create the L<PSGI> app coderef
+for use via L<Plack> and L<plackup>. If you want to globally add middleware,
+you can override this method:
+
+  use Web::Simple 'HelloWorld';
+  use Plack::Builder;
+ 
+  {
+    package HelloWorld;
+
+  
+    around 'to_psgi_app', sub {
+      my ($orig, $self) = (shift, shift);
+      my $app = $self->$orig(@_); 
+      builder {
+        enable ...; ## whatever middleware you want
+        $app;
+      };
+    };
+  }
+
+This method can also be used to mount a Web::Simple application within
+a separate C<*.psgi> file -
+
+  use strictures 1;
+  use Plack::Builder;
+  use WSApp;
+  use AnotherWSApp;
+
+  builder {
+    mount '/' => WSApp->to_psgi_app;
+    mount '/another' => AnotherWSApp->to_psgi_app;
+  };
+
+This method can be called as a class method, in which case it implicitly
+calls ->new, or as an object method ... in which case it doesn't.
+
+=head2 run
+
+Used for running your application under stand-alone CGI and FCGI modes. Also
+useful for testing:
+
+    my $app = MyWebSimpleApp::Web->new;
+    my $c = HTTP::Request::AsCGI->new(@args)->setup;
+    $app->run;
+
+=head1 AUTHOR
+
+Matt S. Trout <mst@shadowcat.co.uk>
+
+=head1 CONTRIBUTORS
+
+None required yet. Maybe this module is perfect (hahahahaha ...).
+
+=head1 COPYRIGHT
+
+Copyright (c) 2010 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
+as listed above.
+
+=head1 LICENSE
+
+This library is free software and may be distributed under the same terms
+as perl itself.
+
+=cut

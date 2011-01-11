@@ -20,9 +20,12 @@ no_index:
     - inc
     - t
 requires:
+  Data::Dumper::Concise: 0
+  Moo: 0
   Plack: 0
   Syntax::Keyword::Gather: 0
   perl: 5.8.0
+  warnings::illegalproto: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.004
+version: 0.005

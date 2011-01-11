@@ -3,7 +3,7 @@ use warnings FATAL => 'all';
 
 use Test::More qw(no_plan);
 
-use Web::Simple::ParamParser;
+use Web::Dispatch::ParamParser;
 
 my $param_sample = 'foo=bar&baz=quux&foo=%2F';
 my $unpacked = {
@@ -17,7 +17,7 @@ my $unpacked = {
 };
 
 is_deeply(
-  Web::Simple::ParamParser::_unpack_params('foo=bar&baz=quux&foo=%2F'),
+  Web::Dispatch::ParamParser::_unpack_params('foo=bar&baz=quux&foo=%2F'),
   $unpacked,
   'Simple unpack ok'
 );
@@ -25,13 +25,13 @@ is_deeply(
 my $env = { 'QUERY_STRING' => $param_sample };
 
 is_deeply(
-  Web::Simple::ParamParser::get_unpacked_query_from($env),
+  Web::Dispatch::ParamParser::get_unpacked_query_from($env),
   $unpacked,
   'Dynamic unpack ok'
 );
 
 is_deeply(
-  $env->{+Web::Simple::ParamParser::UNPACKED_QUERY},
+  $env->{+Web::Dispatch::ParamParser::UNPACKED_QUERY},
   $unpacked,
   'Unpack cached ok'
 );

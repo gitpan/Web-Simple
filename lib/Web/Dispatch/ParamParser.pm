@@ -1,4 +1,4 @@
-package Web::Simple::ParamParser;
+package Web::Dispatch::ParamParser;
 
 use strict;
 use warnings FATAL => 'all';

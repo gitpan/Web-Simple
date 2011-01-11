@@ -5,7 +5,7 @@ use Web::Simple 'HelloWorld';
 {
   package HelloWorld;
 
-  dispatch {
+  sub dispatch_request {
     sub (GET) {
       [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
     },

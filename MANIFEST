@@ -18,17 +18,23 @@ inc/Module/Install/Win32.pm
 inc/Module/Install/WriteAll.pm
 lib/CSS/Declare.pm
 lib/HTML/Tags.pm
+lib/Plack/Middleware/Dispatch.pm
+lib/Web/Dispatch.pm
+lib/Web/Dispatch/Node.pm
+lib/Web/Dispatch/ParamParser.pm
+lib/Web/Dispatch/Parser.pm
+lib/Web/Dispatch/Predicates.pm
+lib/Web/Dispatch/ToApp.pm
+lib/Web/Dispatch/Wrapper.pm
 lib/Web/Simple.pm
 lib/Web/Simple/Application.pm
-lib/Web/Simple/DispatchParser.pm
+lib/Web/Simple/DispatchNode.pm
 lib/Web/Simple/HackedPlack.pm
-lib/Web/Simple/ParamParser.pm
 lib/XML/Tags.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml
 t/bloggery.t
-t/buildall.t
 t/css_declare.t
 t/dispatch_parser.t
 t/env.t
