@@ -1,0 +1,12 @@
+use strict;
+use warnings FATAL => 'all';
+use inc::Module::Install 0.91;
+
+all_from 'lib/Web/Simple.pm';
+requires 'Syntax::Keyword::Gather';
+requires 'Plack';
+requires 'Moo';
+requires 'warnings::illegalproto';
+requires 'Data::Dumper::Concise';
+
+WriteAll;

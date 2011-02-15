@@ -1,12 +1,18 @@
 use strict;
 use warnings FATAL => 'all';
-use inc::Module::Install 0.91;
+use 5.008001;
+use ExtUtils::MakeMaker;
 
-all_from 'lib/Web/Simple.pm';
-requires 'Syntax::Keyword::Gather';
-requires 'Plack';
-requires 'Moo';
-requires 'warnings::illegalproto';
-requires 'Data::Dumper::Concise';
+(do 'maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
 
-WriteAll;
+WriteMakefile(
+  NAME => 'Web-Simple',
+  VERSION_FROM => 'lib/Web/Simple.pm',
+  PREREQ_PM => {
+    'Syntax::Keyword::Gather' => '1.001',
+    'Plack' => '0.9968',
+    'Moo' => '0.009005',
+    'warnings::illegalproto' => '0.001',
+    'Data::Dumper::Concise' => '2.020',
+  },
+);

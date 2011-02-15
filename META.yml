@@ -1,31 +1,26 @@
----
-abstract: 'A quick and easy way to build simple web applications'
+--- #YAML:1.0
+name:               Web-Simple
+version:            0.006
+abstract:           A quick and easy way to build simple web applications
 author:
-  - 'Matt S. Trout <mst@shadowcat.co.uk>'
-build_requires:
-  ExtUtils::MakeMaker: 6.42
+    - mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>
+license:            unknown
+distribution_type:  module
 configure_requires:
-  ExtUtils::MakeMaker: 6.42
-distribution_type: module
-generated_by: 'Module::Install version 1.00'
-license: perl
-meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
-module_name: Web::Simple
-name: Web-Simple
-no_index:
-  directory:
-    - examples
-    - inc
-    - t
+    ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
 requires:
-  Data::Dumper::Concise: 0
-  Moo: 0
-  Plack: 0
-  Syntax::Keyword::Gather: 0
-  perl: 5.8.0
-  warnings::illegalproto: 0
-resources:
-  license: http://dev.perl.org/licenses/
-version: 0.005
+    Data::Dumper::Concise:  2.020
+    Moo:                  0.009005
+    Plack:                0.9968
+    Syntax::Keyword::Gather:  1.001
+    warnings::illegalproto:  0.001
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.56
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4
