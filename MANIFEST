@@ -27,8 +27,6 @@ maint/Makefile.PL.include
 Makefile.PL
 MANIFEST			This list of files
 META.yml
-oldMakefile.PL
-README
 t/bloggery.t
 t/css_declare.t
 t/dispatch_parser.t

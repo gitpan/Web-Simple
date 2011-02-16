@@ -1,5 +1,8 @@
 Change log for Web::Simple
 
+0.007 - 2011-02-16
+  - Re-release due to indexing failure
+
 0.006 - 2011-02-15
   - Fix Content-type issue (ie, Content-type: blah works, 
     but Content-type: blah; charset: blah shits flames)
