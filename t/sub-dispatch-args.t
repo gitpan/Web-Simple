@@ -2,11 +2,8 @@ use strict;
 use warnings FATAL => 'all';
 
 use Data::Dumper::Concise;
-use Test::More (
-  eval { require HTTP::Request::AsCGI }
-    ? 'no_plan'
-    : (skip_all => 'No HTTP::Request::AsCGI')
-);
+use Test::More 'no_plan';
+use Plack::Test;
 
 {
     use Web::Simple 't::Web::Simple::SubDispatchArgs';
@@ -72,11 +69,8 @@ ok my $app = t::Web::Simple::SubDispatchArgs->new,
   'made app';
 
 sub run_request {
-  my @args = (shift, SCRIPT_NAME=> $0);
-  my $c = HTTP::Request::AsCGI->new(@args)->setup;
-  $app->run;
-  $c->restore;
-  return $c->response;
+  my $request = shift;
+  return test_psgi $app->to_psgi_app, sub { shift->($request) };
 }
 
 use HTTP::Request::Common qw(GET POST);
@@ -87,13 +81,14 @@ ok my $get_landing = run_request(GET 'http://localhost/' ),
 cmp_ok $get_landing->code, '==', 200, 
   '200 on GET';
 
+no strict 'refs';
+
 {
-    my ($self, $env, @noextra) = @{eval $get_landing->content};
+    my ($self, $env, @noextra) = @{eval($get_landing->content)||[]};
     die $@ if $@;
     is scalar(@noextra), 0, 'No extra stuff';
     is ref($self), 't::Web::Simple::SubDispatchArgs', 'got object';
     is ref($env), 'HASH', 'Got hashref';
-    is $env->{SCRIPT_NAME}, $0, 'correct scriptname';
 }
 
 ok my $get_users = run_request(GET 'http://localhost/user'),
@@ -107,7 +102,6 @@ cmp_ok $get_users->code, '==', 200,
     is scalar(@noextra), 0, 'No extra stuff';
     is ref($self), 't::Web::Simple::SubDispatchArgs', 'got object';
     is ref($env), 'HASH', 'Got hashref';
-    is $env->{SCRIPT_NAME}, $0, 'correct scriptname';
 }
 
 ok my $get_user = run_request(GET 'http://localhost/user/42'),
@@ -121,7 +115,6 @@ cmp_ok $get_user->code, '==', 200,
     is scalar(@noextra), 0, 'No extra stuff';
     is ref($self), 't::Web::Simple::SubDispatchArgs', 'got object';
     is ref($env), 'HASH', 'Got hashref';
-    is $env->{SCRIPT_NAME}, $0, 'correct scriptname';
 }
 
 ok my $post_user = run_request(POST 'http://localhost/user/42', [id => '99'] ),
@@ -137,6 +130,5 @@ cmp_ok $post_user->code, '==', 200,
     is ref($params), 'HASH', 'Got POST hashref';
     is $params->{id}, 99, 'got expected value for id';
     is ref($env), 'HASH', 'Got hashref';
-    is $env->{SCRIPT_NAME}, $0, 'correct scriptname';
 }
 

@@ -45,14 +45,14 @@ sub run_if_script {
 
 sub _run_cgi {
   my $self = shift;
-  require Plack::Server::CGI;
-  Plack::Server::CGI->run($self->to_psgi_app);
+  require Plack::Handler::CGI;
+  Plack::Handler::CGI->new->run($self->to_psgi_app);
 }
 
 sub _run_fcgi {
   my $self = shift;
-  require Plack::Server::FCGI;
-  Plack::Server::FCGI->run($self->to_psgi_app);
+  require Plack::Handler::FCGI;
+  Plack::Handler::FCGI->new->run($self->to_psgi_app);
 }
 
 sub to_psgi_app {
@@ -62,7 +62,10 @@ sub to_psgi_app {
 
 sub run {
   my $self = shift;
-  if ($ENV{PHP_FCGI_CHILDREN} || $ENV{FCGI_ROLE} || $ENV{FCGI_SOCKET_PATH}) {
+  if (
+    $ENV{PHP_FCGI_CHILDREN} || $ENV{FCGI_ROLE} || $ENV{FCGI_SOCKET_PATH}
+    || -S STDIN # STDIN is a socket, almost certainly FastCGI
+    ) {
     return $self->_run_fcgi;
   } elsif ($ENV{GATEWAY_INTERFACE}) {
     return $self->_run_cgi;
@@ -100,7 +103,11 @@ sub _run_test_request {
   Plack::Test::test_psgi(
     $self->to_psgi_app, sub { $response = shift->($request) }
   );
-  print $response->as_string;
+  print STDERR $response->status_line."\n";
+  print STDERR $response->headers_as_string("\n")."\n";
+  my $content = $response->content;
+  $content .= "\n" if length($content) and $content !~ /\n\z/;
+  print STDOUT $content if $content;
 }
 
 sub _run_cli {
@@ -262,29 +269,14 @@ calls ->new, or as an object method ... in which case it doesn't.
 
 =head2 run
 
-Used for running your application under stand-alone CGI and FCGI modes. Also
-useful for testing:
+Used for running your application under stand-alone CGI and FCGI modes.
 
-    my $app = MyWebSimpleApp::Web->new;
-    my $c = HTTP::Request::AsCGI->new(@args)->setup;
-    $app->run;
+=head1 AUTHORS
 
-=head1 AUTHOR
+See L<Web::Simple> for authors.
 
-Matt S. Trout <mst@shadowcat.co.uk>
+=head1 COPYRIGHT AND LICENSE
 
-=head1 CONTRIBUTORS
-
-None required yet. Maybe this module is perfect (hahahahaha ...).
-
-=head1 COPYRIGHT
-
-Copyright (c) 2010 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
-as listed above.
-
-=head1 LICENSE
-
-This library is free software and may be distributed under the same terms
-as perl itself.
+See L<Web::Simple> for the copyright and license.
 
 =cut

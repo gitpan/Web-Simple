@@ -115,6 +115,10 @@ sub _parse_spec_section {
     # %<param spec>
     /\G\%/gc and
       return $self->_parse_param_handler($_, 'body');
+
+    # *<param spec>
+    /\G\*/gc and
+      return $self->_parse_param_handler($_, 'uploads');
   }
   return; # () will trigger the blam in our caller
 }
@@ -124,6 +128,7 @@ sub _url_path_match {
   for ($_[1]) {
     my @path;
     my $end = '';
+    my $keep_dot;
     PATH: while (/\G\//gc) {
       /\G\.\.\./gc
         and do {
@@ -132,8 +137,13 @@ sub _url_path_match {
         };
       push @path, $self->_url_path_segment_match($_)
         or $self->_blam("Couldn't parse path match segment");
+      /\G\.\*/gc
+        and do {
+          $keep_dot = 1;
+          last PATH;
+        };
     }
-    if (@path && !$end) {
+    if (@path && !$end && !$keep_dot) {
       length and $_ .= '(?:\.\w+)?' for $path[-1];
     }
     my $re = '^('.join('/','',@path).')'.$end.'$';

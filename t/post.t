@@ -1,11 +1,7 @@
 use strict;
 use warnings FATAL => 'all';
 
-use Test::More (
-  eval { require HTTP::Request::AsCGI }
-    ? 'no_plan'
-    : (skip_all => 'No HTTP::Request::AsCGI')
-);
+use Test::More qw(no_plan);
 
 {
   use Web::Simple 'PostTest';
@@ -18,19 +14,23 @@ use Test::More (
         [ join(' ',@{$_[1]}{qw(foo bar)}) ]
       ]
     },
+    sub (*baz=) {
+      [ 200,
+        [ "Content-type" => "text/plain" ],
+        [ $_[1]->reason || $_[1]->filename ],
+      ]
+    },
   }
 }
 
+use Plack::Test;
 use HTTP::Request::Common qw(GET POST);
 
 my $app = PostTest->new;
 
 sub run_request {
   my $request = shift;
-  my $c = HTTP::Request::AsCGI->new($request)->setup;
-  $app->run;
-  $c->restore;
-  return $c->response;
+  return test_psgi $app->to_psgi_app, sub { shift->($request) };
 }
 
 my $get = run_request(GET 'http://localhost/');
@@ -58,3 +58,56 @@ my $both = run_request(
 cmp_ok($both->code, '==', 200, '200 with both params');
 
 is($both->content, 'FOO BAR', 'both params returned');
+
+my $upload = run_request(
+  POST 'http://localhost'
+    => Content_Type => 'form-data'
+    => Content => [
+      foo => 'FOO',
+      bar => 'BAR'
+    ]
+);
+
+cmp_ok($upload->code, '==', 200, '200 with multipart');
+
+is($upload->content, 'FOO BAR', 'both params returned');
+
+my $upload_wrongtype = run_request(
+  POST 'http://localhost'
+    => [ baz => 'fleem' ]
+);
+
+is(
+  $upload_wrongtype->content,
+  'field baz exists with value fleem but body was not multipart/form-data',
+  'error points out wrong body type'
+);
+
+my $upload_notupload = run_request(
+  POST 'http://localhost'
+    => Content_Type => 'form-data'
+    => Content => [ baz => 'fleem' ]
+);
+
+is(
+  $upload_notupload->content,
+  'field baz exists with value fleem but was not an upload',
+  'error points out field was not an upload'
+);
+
+my $upload_isupload = run_request(
+  POST 'http://localhost'
+    => Content_Type => 'form-data'
+    => Content => [
+      baz => [
+        undef, 'TESTFILE',
+        Content => 'test content', 'Content-Type' => 'text/plain'
+      ],
+    ]
+);
+
+is(
+  $upload_isupload->content,
+  'TESTFILE',
+  'Actual upload returns filename ok'
+);

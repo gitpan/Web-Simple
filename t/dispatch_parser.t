@@ -259,6 +259,23 @@ my $dp = Web::Dispatch::Parser->new;
    );
 }
 
+{
+  my @dot_pairs = (
+    [ '/one/*' => 'two' ],
+    [ '/one/*.*' => 'two.three' ],
+    [ '/**' => 'one/two' ],
+    [ '/**.*' => 'one/two.three' ],
+  );
+
+  foreach my $p (@dot_pairs) {
+    is_deeply(
+      [ $dp->parse($p->[0])->({ PATH_INFO => '/one/two.three' }) ],
+      [ {}, $p->[1] ],
+      "${\$p->[0]} matches /one/two.three and returns ${\$p->[1]}"
+    );
+  }
+}
+
 #
 # query string
 #

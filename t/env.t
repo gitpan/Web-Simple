@@ -1,11 +1,8 @@
 use strict;
 use warnings FATAL => 'all';
 
-use Test::More (
-  eval { require HTTP::Request::AsCGI }
-    ? 'no_plan'
-    : (skip_all => 'No HTTP::Request::AsCGI')
-);
+use Test::More 'no_plan';
+use Plack::Test;
 
 {
   use Web::Simple 'EnvTest';
@@ -27,10 +24,7 @@ my $app = EnvTest->new;
 
 sub run_request {
   my $request = shift;
-  my $c = HTTP::Request::AsCGI->new($request)->setup;
-  $app->run;
-  $c->restore;
-  return $c->response;
+  return test_psgi $app->to_psgi_app, sub { shift->($request) };
 }
 
 ok run_request(GET 'http://localhost/')->is_success;

@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.008';
+our $VERSION = '0.009';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -34,19 +34,6 @@ sub _export_into {
 
 Web::Simple - A quick and easy way to build simple web applications
 
-=head1 WARNING
-
-This is really quite new. If you're reading this on CPAN, it means the stuff
-that's here we're probably happy with. But only probably. So we may have to
-change stuff. And if you're reading this from git, come check with irc.perl.org
-#web-simple that we're actually sure we're going to keep anything that's
-different from the CPAN version.
-
-If we do find we have to change stuff we'll add to the
-L<CHANGES BETWEEN RELEASES> section explaining how to switch your code across
-to the new version, and we'll do our best to make it as painless as possible
-because we've got Web::Simple applications too. But we can't promise not to
-change things at all. Not yet. Sorry.
 
 =head1 SYNOPSIS
 
@@ -109,7 +96,7 @@ on *fatal* warnings so if you have any warnings at any point from the file
 that you did 'use Web::Simple' in, then your application will die. This is,
 so far, considered a feature.
 
-When we inherit from L<Web::Simple::Application> we also use <Moo>, which is
+When we inherit from L<Web::Simple::Application> we also use L<Moo>, which is
 the the equivalent of:
 
   {
@@ -343,6 +330,15 @@ specification will match like this:
   /foo/        # match and strip path to '/'
   /foo/bar/baz # match and strip path to '/bar/baz'
 
+Note: Since Web::Simple handles a concept of file extensions, * and **
+matchers will not by default match things after a final dot, and this
+can be modified by using *.* and **.* in the final position, i.e.:
+
+  /one/*       matches /one/two.three    and captures "two"
+  /one/*.*     matches /one/two.three    and captures "two.three"
+  /**          matches /one/two.three    and captures "one/two"
+  /**.*        matches /one/two.three    and captures "one/two.three"
+
 =head3 Extension matches
 
   sub (.html) {
@@ -367,9 +363,10 @@ Query and body parameters can be match via
   sub (?<param spec>) { # match URI query
   sub (%<param spec>) { # match body params
 
-The body is only matched if the content type is
-application/x-www-form-urlencoded (note this means that Web::Simple does
-not yet handle uploads; this will be addressed in a later release).
+The body spec will match if the request content is either
+application/x-www-form-urlencoded or multipart/form-data - the latter
+of which is required for uploads, which are now handled experimentally
+- see below.
 
 The param spec is elements of one of the following forms -
 
@@ -431,6 +428,36 @@ Note, in the case where you combine arrayref, single parameter and named
 hashref style, the arrayref and single parameters will appear in C<@_> in the
 order you defined them in the protoype, but all hashrefs will merge into a 
 single C<$params>, as in the example above.
+
+=head3 Upload matches (EXPERIMENTAL)
+
+Note: This feature is experimental. This means that it may not remain
+100% in its current form. If we change it, notes on updating your code
+will be added to the L</CHANGES BETWEEN RELEASES> section below.
+
+  sub (*foo=) { # param specifier can be anything valid for query or body
+
+The upload match system functions exactly like a query/body match, except
+that the values returned (if any) are C<Web::Dispatch::Upload> objects.
+
+Note that this match type will succeed in two circumstances where you might
+not expect it to - first, when the field exists but is not an upload field
+and second, when the field exists but the form is not an upload form (i.e.
+content type "application/x-www-form-urlencoded" rather than
+"multipart/form-data"). In either of these cases, what you'll get back is
+a C<Web::Dispatch::NotAnUpload> object, which will C<die> with an error
+pointing out the problem if you try and use it. To be sure you have a real
+upload object, call
+
+  $upload->is_upload # returns 1 on a valid upload, 0 on a non-upload field
+
+and to get the reason why such an object is not an upload, call
+
+  $upload->reason # returns a reason or '' on a valid upload.
+
+Other than these two methods, the upload object provides the same interface
+as L<Plack::Request::Upload> with the addition of a stringify to the temporary
+filename to make copying it somewhere else easier to handle.
 
 =head3 Combining matches
 
@@ -626,7 +653,8 @@ that having a bare minimum system for writing web applications that doesn't
 drive me insane was rather nice and decided to spend my attempt at nanowrimo
 for 2009 improving and documenting it to the point where others could use it.
 
-The Antiquated Perl talk can be found at L<http://www.shadowcat.co.uk/archive/conference-video/>.
+The Antiquated Perl talk can be found at L<http://www.shadowcat.co.uk/archive/conference-video/> and the slides are reproduced in this distribution under
+L<Web::Simple::AntiquatedPerl>.
 
 =head1 COMMUNITY AND SUPPORT
 

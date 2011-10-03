@@ -1,7 +1,4 @@
 Changes
-docs/antiquated-perl.xul
-docs/takahashi.css
-docs/takahashi.js
 examples/bloggery/bloggery.cgi
 examples/bloggery/posts/Another-Post.html
 examples/bloggery/posts/One-Post.html
@@ -17,6 +14,7 @@ lib/Web/Dispatch/ParamParser.pm
 lib/Web/Dispatch/Parser.pm
 lib/Web/Dispatch/Predicates.pm
 lib/Web/Dispatch/ToApp.pm
+lib/Web/Dispatch/Upload.pm
 lib/Web/Dispatch/Wrapper.pm
 lib/Web/Simple.pm
 lib/Web/Simple/Application.pm
@@ -39,3 +37,5 @@ t/response-filter.t
 t/sub-dispatch-args.t
 t/sub-dispatch-env.t
 t/tags.t
+META.json                                Module JSON meta-data (added by MakeMaker)
+README                                   README file (added by Distar)
