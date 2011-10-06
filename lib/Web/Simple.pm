@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.009';
+our $VERSION = '0.010';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -39,18 +39,15 @@ Web::Simple - A quick and easy way to build simple web applications
 
   #!/usr/bin/env perl
 
-  use Web::Simple 'HelloWorld';
+  package HelloWorld;
+  use Web::Simple
 
-  {
-    package HelloWorld;
-
-    sub dispatch_request {
-      sub (GET) {
-        [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
-      },
-      sub () {
-        [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
-      }
+  sub dispatch_request {
+    sub (GET) {
+      [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
+    },
+    sub () {
+      [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
     }
   }
 
@@ -60,9 +57,17 @@ If you save this file into your cgi-bin as C<hello-world.cgi> and then visit:
 
   http://my.server.name/cgi-bin/hello-world.cgi/
 
-you'll get the "Hello world!" string output to your browser. For more complex
-examples and non-CGI deployment, see below. To get help with L<Web::Simple>,
-please connect to the irc.perl.org IRC network and join #web-simple.
+you'll get the "Hello world!" string output to your browser. At the same time
+this file will also act as a class module, so you can save it as HelloWorld.pm
+and use it as-is in test scripts or other deployment mechanisms.
+
+Note that you should retain the ->run_if_script even if your app is a
+module, since this additionally makes it valid as a .psgi file, which can
+be extremely useful during development.
+
+For more complex examples and non-CGI deployment, see
+L<Web::Simple::Deployment>. To get help with L<Web::Simple>, please connect to
+the irc.perl.org IRC network and join #web-simple.
 
 =head1 DESCRIPTION
 
@@ -82,7 +87,7 @@ C<import> based one:
 
 This sets up your package (in this case "NameOfApplication" is your package)
 so that it inherits from L<Web::Simple::Application> and imports L<strictures>,
-as well as installs a C<PSGI_ENV> constant for convenience, as well as some 
+as well as installs a C<PSGI_ENV> constant for convenience, as well as some
 other subroutines.
 
 Importing L<strictures> will automatically make your code use the C<strict> and
@@ -426,7 +431,7 @@ the 'coffee' parameter.
 
 Note, in the case where you combine arrayref, single parameter and named
 hashref style, the arrayref and single parameters will appear in C<@_> in the
-order you defined them in the protoype, but all hashrefs will merge into a 
+order you defined them in the protoype, but all hashrefs will merge into a
 single C<$params>, as in the example above.
 
 =head3 Upload matches (EXPERIMENTAL)
@@ -572,7 +577,7 @@ Thus if you receive a POST to '/some/url' and return a redispatch to
 request had been made to '/other/url' instead.
 
 Note, this is not the same as returning an HTTP 3xx redirect as a response;
-rather it is a much more efficient internal process.  
+rather it is a much more efficient internal process.
 
 =head1 CHANGES BETWEEN RELEASES
 
@@ -622,6 +627,8 @@ As of 0.005, you can instead write simply:
       ...
     )
   }
+
+=back
 
 =head2 Changes since Antiquated Perl
 
@@ -674,11 +681,31 @@ Gitweb is on http://git.shadowcat.co.uk/ and the clone URL is:
 
 =head1 AUTHOR
 
-Matt S. Trout <mst@shadowcat.co.uk>
+Matt S. Trout (mst) <mst@shadowcat.co.uk>
 
 =head1 CONTRIBUTORS
 
-None required yet. Maybe this module is perfect (hahahahaha ...).
+Devin Austin (dhoss) <dhoss@cpan.org>
+
+Arthur Axel 'fREW' Schmidt <frioux@gmail.com>
+
+gregor herrmann (gregoa) <gregoa@debian.org>
+
+John Napiorkowski (jnap) <jjn1056@yahoo.com>
+
+Josh McMichael <jmcmicha@linus222.gsc.wustl.edu>
+
+Justin Hunter <justin.d.hunter@gmail.com>
+
+Kjetil Kjernsmo <kjetil@kjernsmo.net>
+
+markie <markie@nulletch64.dreamhost.com>
+
+Christian Walde (Mithaldu) <walde.christian@googlemail.com>
+
+nperez <nperez@cpan.org>
+
+Robin Edwards <robin.ge@gmail.com>
 
 =head1 COPYRIGHT
 

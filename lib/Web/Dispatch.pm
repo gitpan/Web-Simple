@@ -33,11 +33,11 @@ sub call {
 
 sub _dispatch {
   my ($self, $env, @match) = @_;
-  while (my $try = shift @match) {
+  while (defined(my $try = shift @match)) {
 
     return $try if ref($try) eq 'ARRAY';
     if (ref($try) eq 'HASH') {
-      $env = { %$env, %$try };
+      $env = { 'Web::Dispatch.original_env' => $env, %$env, %$try };
       next;
     }
 
@@ -46,7 +46,7 @@ sub _dispatch {
 
     my $first = $result[0];
 
-    if (my $res = $self->_have_result( $first, \@result, \@match, $env )) {
+    if (my $res = $self->_have_result($first, \@result, \@match, $env)) {
 
       return $res;
     }
@@ -60,18 +60,18 @@ sub _dispatch {
 }
 
 sub _have_result {
-  my ( $self, $first, $result, $match, $env ) = @_;
+  my ($self, $first, $result, $match, $env) = @_;
 
-  if ( ref($first) eq 'ARRAY' ) {
-    return $self->_unpack_array_match( $first );
+  if (ref($first) eq 'ARRAY') {
+    return $self->_unpack_array_match($first);
   }
-  elsif ( blessed($first) && $first->isa('Plack::Middleware') ) {
-    return $self->_uplevel_middleware( $first, $result );
+  elsif (blessed($first) && $first->isa('Plack::Middleware')) {
+    return $self->_uplevel_middleware($first, $result);
   }
-  elsif ( ref($first) eq 'HASH' and $first->{+MAGIC_MIDDLEWARE_KEY} ) {
-    return $self->_redispatch_with_middleware( $first, $match, $env );
+  elsif (ref($first) eq 'HASH' and $first->{+MAGIC_MIDDLEWARE_KEY}) {
+    return $self->_redispatch_with_middleware($first, $match, $env);
   }
-  elsif ( blessed($first) && !$first->can('to_app') ) {
+  elsif (blessed($first) && !$first->can('to_app')) {
     return $first;
   }
 
@@ -79,13 +79,13 @@ sub _have_result {
 }
 
 sub _unpack_array_match {
-  my ( $self, $match ) = @_;
+  my ($self, $match) = @_;
   return $match->[0] if @{$match} == 1 and ref($match->[0]) eq 'CODE';
   return $match;
 }
 
 sub _uplevel_middleware {
-  my ( $self, $match, $results ) = @_;
+  my ($self, $match, $results) = @_;
   die "Multiple results but first one is a middleware ($match)"
     if @{$results} > 1;
   # middleware needs to uplevel exactly once to wrap the rest of the
@@ -94,7 +94,7 @@ sub _uplevel_middleware {
 }
 
 sub _redispatch_with_middleware {
-  my ( $self, $first, $match, $env ) = @_;
+  my ($self, $first, $match, $env) = @_;
 
   my $mw = $first->{+MAGIC_MIDDLEWARE_KEY};
 
@@ -105,18 +105,20 @@ sub _redispatch_with_middleware {
 
 sub _to_try {
   my ($self, $try, $more) = @_;
+
+  # sub (<spec>) {}      becomes a dispatcher
+  # sub {}               is a PSGI app and can be returned as is
+  # '<spec>' => sub {}   becomes a dispatcher
+  # $obj w/to_app method is a Plack::App-like thing - call it to get a PSGI app
+
   if (ref($try) eq 'CODE') {
     if (defined(my $proto = prototype($try))) {
-      $self->_construct_node(
-        match => $self->_parser->parse($proto), run => $try
-      )->to_app;
+      $self->_construct_node(match => $proto, run => $try)->to_app;
     } else {
       $try
     }
   } elsif (!ref($try) and ref($more->[0]) eq 'CODE') {
-    $self->_construct_node(
-      match => $self->_parser->parse($try), run => shift(@$more)
-    )->to_app;
+    $self->_construct_node(match => $try, run => shift(@$more))->to_app;
   } elsif (blessed($try) && $try->can('to_app')) {
     $try->to_app;
   } else {
@@ -126,6 +128,7 @@ sub _to_try {
 
 sub _construct_node {
   my ($self, %args) = @_;
+  $args{match} = $self->_parser->parse($args{match});
   $self->node_class->new({ %{$self->node_args}, %args });
 }
 

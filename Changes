@@ -1,5 +1,10 @@
 Change log for Web::Simple
 
+0.010 - 2011-10-06
+  - Provide $app->run_test_request for use in test scripts
+  - Preserve original env in Web::Dispatch so ParamParser can cache in there
+    (stops HTTP::Body object getting destroyed early thereby losing uploads)
+
 0.009 - 2011-10-03
   - Complete port from HTTP::Request::AsCGI to Plack::Test
   - Add experimental upload support

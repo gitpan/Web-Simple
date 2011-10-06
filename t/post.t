@@ -23,36 +23,31 @@ use Test::More qw(no_plan);
   }
 }
 
-use Plack::Test;
 use HTTP::Request::Common qw(GET POST);
 
 my $app = PostTest->new;
+sub run_request { $app->run_test_request(@_); }
 
-sub run_request {
-  my $request = shift;
-  return test_psgi $app->to_psgi_app, sub { shift->($request) };
-}
-
-my $get = run_request(GET 'http://localhost/');
+my $get = run_request(GET => 'http://localhost/');
 
 cmp_ok($get->code, '==', 404, '404 on GET');
 
-my $no_body = run_request(POST 'http://localhost/');
+my $no_body = run_request(POST => 'http://localhost/');
 
 cmp_ok($no_body->code, '==', 404, '404 with empty body');
 
-my $no_foo = run_request(POST 'http://localhost/' => [ bar => 'BAR' ]);
+my $no_foo = run_request(POST => 'http://localhost/' => [ bar => 'BAR' ]);
 
 cmp_ok($no_foo->code, '==', 404, '404 with no foo param');
 
-my $no_bar = run_request(POST 'http://localhost/' => [ foo => 'FOO' ]);
+my $no_bar = run_request(POST => 'http://localhost/' => [ foo => 'FOO' ]);
 
 cmp_ok($no_bar->code, '==', 200, '200 with only foo param');
 
 is($no_bar->content, 'FOO EMPTY', 'bar defaulted');
 
 my $both = run_request(
-  POST 'http://localhost/' => [ foo => 'FOO', bar => 'BAR' ]
+  POST => 'http://localhost/' => [ foo => 'FOO', bar => 'BAR' ]
 );
 
 cmp_ok($both->code, '==', 200, '200 with both params');
@@ -73,7 +68,7 @@ cmp_ok($upload->code, '==', 200, '200 with multipart');
 is($upload->content, 'FOO BAR', 'both params returned');
 
 my $upload_wrongtype = run_request(
-  POST 'http://localhost'
+  POST => 'http://localhost'
     => [ baz => 'fleem' ]
 );
 

@@ -78,17 +78,18 @@ sub run {
 
   unshift(@args, 'GET') if $args[0] =~ m{^/};
 
-  $self->_run_test_request(@args);
+  $self->_run_cli_test_request(@args);
 }
 
-sub _run_test_request {
+sub _test_request_spec_to_http_request {
   my ($self, $method, $path, @rest) = @_;
 
-  require HTTP::Request;
-  require Plack::Test;
+  # if it's a reference, assume a request object
+  return $method if ref($method);
 
   my $request = HTTP::Request->new($method => $path);
-  if ($method eq 'POST' or $method eq 'PUT' and @rest) {
+
+  if (($method eq 'POST' or $method eq 'PUT') and @rest) {
     my $content = do {
       require URI;
       my $url = URI->new('http:');
@@ -99,10 +100,29 @@ sub _run_test_request {
     $request->header('Content-Length' => length($content));
     $request->content($content);
   }
-  my $response;
+
+  return $request;
+}
+
+sub run_test_request {
+  my ($self, @req) = @_;
+
+  require HTTP::Request;
+  require Plack::Test;
+
+  my $request = $self->_test_request_spec_to_http_request(@req);
+
   Plack::Test::test_psgi(
-    $self->to_psgi_app, sub { $response = shift->($request) }
+    $self->to_psgi_app, sub { shift->($request) }
   );
+}
+
+sub _run_cli_test_request {
+  my ($self, @req) = @_;
+  my $response = $self->run_test_request(@req);
+
+  binmode(STDOUT); binmode(STDERR); # for win32
+
   print STDERR $response->status_line."\n";
   print STDERR $response->headers_as_string("\n")."\n";
   my $content = $response->content;
@@ -270,6 +290,25 @@ calls ->new, or as an object method ... in which case it doesn't.
 =head2 run
 
 Used for running your application under stand-alone CGI and FCGI modes.
+
+I should document this more extensively but run_if_script will call it when
+you need it, so don't worry about it too much.
+
+=head2 run_test_request
+
+  my $res = $app->run_test_request(GET => '/');
+
+  my $res = $app->run_test_request(POST => '/' => %form);
+
+  my $res = $app->run_test_request($http_request);
+
+Accepts either an L<HTTP::Request> object or ($method, $path) and runs that
+request against the application, returning an L<HTTP::Response> object.
+
+If the HTTP method is POST or PUT, then a series of pairs can be passed after
+this to create a form style message body. If you need to test an upload, then
+create an L<HTTP::Request> object by hand or use the C<POST> subroutine
+provided by L<HTTP::Request::Common>.
 
 =head1 AUTHORS
 

@@ -7,15 +7,16 @@ sub UNPACKED_QUERY () { __PACKAGE__.'.unpacked_query' }
 sub UNPACKED_BODY () { __PACKAGE__.'.unpacked_body' }
 sub UNPACKED_BODY_OBJECT () { __PACKAGE__.'.unpacked_body_object' }
 sub UNPACKED_UPLOADS () { __PACKAGE__.'.unpacked_uploads' }
+sub ORIG_ENV () { 'Web::Dispatch.original_env' }
 
 sub get_unpacked_query_from {
-  return $_[0]->{+UNPACKED_QUERY} ||= do {
+  return ($_[0]->{+ORIG_ENV}||$_[0])->{+UNPACKED_QUERY} ||= do {
     _unpack_params($_[0]->{QUERY_STRING})
   };
 }
 
 sub get_unpacked_body_from {
-  return $_[0]->{+UNPACKED_BODY} ||= do {
+  return ($_[0]->{+ORIG_ENV}||$_[0])->{+UNPACKED_BODY} ||= do {
     my $ct = lc($_[0]->{CONTENT_TYPE}||'');
     if (!$_[0]->{CONTENT_LENGTH}) {
       {}
@@ -39,7 +40,7 @@ sub get_unpacked_body_from {
 
 sub get_unpacked_body_object_from {
   # we may have no object at all - so use a single element arrayref for ||=
-  return ($_[0]->{+UNPACKED_BODY_OBJECT} ||= do {
+  return (($_[0]->{+ORIG_ENV}||$_[0])->{+UNPACKED_BODY_OBJECT} ||= do {
     if (!$_[0]->{CONTENT_LENGTH}) {
       [ undef ]
     } elsif (index(lc($_[0]->{CONTENT_TYPE}||''),'multipart/form-data')==-1) {

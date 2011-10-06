@@ -18,13 +18,6 @@ use Plack::Test;
   }
 }
 
-use HTTP::Request::Common qw(GET POST);
-
 my $app = EnvTest->new;
 
-sub run_request {
-  my $request = shift;
-  return test_psgi $app->to_psgi_app, sub { shift->($request) };
-}
-
-ok run_request(GET 'http://localhost/')->is_success;
+ok $app->run_test_request(GET => 'http://localhost/')->is_success;

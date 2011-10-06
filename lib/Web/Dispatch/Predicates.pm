@@ -12,7 +12,7 @@ sub match_and {
   my @match = @_;
   sub {
     my ($env) = @_;
-    my $my_env = { %$env };
+    my $my_env = { 'Web::Dispatch.original_env' => $env, %$env };
     my $new_env;
     my @got;
     foreach my $match (@match) {

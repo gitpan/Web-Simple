@@ -34,6 +34,7 @@ use Plack::Test;
     sub show_landing {
         my ($self, @args) = @_;
         local $self->{_dispatcher};
+        local $args[-1]->{'Web::Dispatch.original_env'};
         return [
             200, ['Content-Type' => 'application/perl' ],
             [::Dumper \@args],
@@ -42,6 +43,7 @@ use Plack::Test;
     sub show_users {
         my ($self, @args) = @_;
         local $self->{_dispatcher};
+        local $args[-1]->{'Web::Dispatch.original_env'};
         return [
             200, ['Content-Type' => 'application/perl' ],
             [::Dumper \@args],
@@ -50,6 +52,7 @@ use Plack::Test;
     sub show_user {
         my ($self, @args) = @_;
         local $self->{_dispatcher};
+        local $args[-1]->{'Web::Dispatch.original_env'};
         return [
             200, ['Content-Type' => 'application/perl' ],
             [::Dumper \@args],
@@ -58,6 +61,7 @@ use Plack::Test;
     sub process_post {
         my ($self, @args) = @_;
         local $self->{_dispatcher};
+        local $args[-1]->{'Web::Dispatch.original_env'};
         return [
             200, ['Content-Type' => 'application/perl' ],
             [::Dumper \@args],
@@ -68,17 +72,12 @@ use Plack::Test;
 ok my $app = t::Web::Simple::SubDispatchArgs->new,
   'made app';
 
-sub run_request {
-  my $request = shift;
-  return test_psgi $app->to_psgi_app, sub { shift->($request) };
-}
+sub run_request { $app->run_test_request(@_); }
 
-use HTTP::Request::Common qw(GET POST);
-
-ok my $get_landing = run_request(GET 'http://localhost/' ),
+ok my $get_landing = run_request(GET => 'http://localhost/' ),
   'got landing';
 
-cmp_ok $get_landing->code, '==', 200, 
+cmp_ok $get_landing->code, '==', 200,
   '200 on GET';
 
 no strict 'refs';
@@ -91,10 +90,10 @@ no strict 'refs';
     is ref($env), 'HASH', 'Got hashref';
 }
 
-ok my $get_users = run_request(GET 'http://localhost/user'),
+ok my $get_users = run_request(GET => 'http://localhost/user'),
   'got user';
 
-cmp_ok $get_users->code, '==', 200, 
+cmp_ok $get_users->code, '==', 200,
   '200 on GET';
 
 {
@@ -104,10 +103,10 @@ cmp_ok $get_users->code, '==', 200,
     is ref($env), 'HASH', 'Got hashref';
 }
 
-ok my $get_user = run_request(GET 'http://localhost/user/42'),
+ok my $get_user = run_request(GET => 'http://localhost/user/42'),
   'got user';
 
-cmp_ok $get_user->code, '==', 200, 
+cmp_ok $get_user->code, '==', 200,
   '200 on GET';
 
 {
@@ -117,10 +116,10 @@ cmp_ok $get_user->code, '==', 200,
     is ref($env), 'HASH', 'Got hashref';
 }
 
-ok my $post_user = run_request(POST 'http://localhost/user/42', [id => '99'] ),
+ok my $post_user = run_request(POST => 'http://localhost/user/42', [id => '99'] ),
   'post user';
 
-cmp_ok $post_user->code, '==', 200, 
+cmp_ok $post_user->code, '==', 200,
   '200 on POST';
 
 {
@@ -131,4 +130,3 @@ cmp_ok $post_user->code, '==', 200,
     is $params->{id}, 99, 'got expected value for id';
     is ref($env), 'HASH', 'Got hashref';
 }
-

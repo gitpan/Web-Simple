@@ -4,18 +4,15 @@ NAME
 SYNOPSIS
       #!/usr/bin/env perl
 
-      use Web::Simple 'HelloWorld';
+      package HelloWorld;
+      use Web::Simple
 
-      {
-        package HelloWorld;
-
-        sub dispatch_request {
-          sub (GET) {
-            [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
-          },
-          sub () {
-            [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
-          }
+      sub dispatch_request {
+        sub (GET) {
+          [ 200, [ 'Content-type', 'text/plain' ], [ 'Hello world!' ] ]
+        },
+        sub () {
+          [ 405, [ 'Content-type', 'text/plain' ], [ 'Method not allowed' ] ]
         }
       }
 
@@ -26,10 +23,18 @@ SYNOPSIS
 
       http://my.server.name/cgi-bin/hello-world.cgi/
 
-    you'll get the "Hello world!" string output to your browser. For more
-    complex examples and non-CGI deployment, see below. To get help with
-    Web::Simple, please connect to the irc.perl.org IRC network and join
-    #web-simple.
+    you'll get the "Hello world!" string output to your browser. At the same
+    time this file will also act as a class module, so you can save it as
+    HelloWorld.pm and use it as-is in test scripts or other deployment
+    mechanisms.
+
+    Note that you should retain the ->run_if_script even if your app is a
+    module, since this additionally makes it valid as a .psgi file, which
+    can be extremely useful during development.
+
+    For more complex examples and non-CGI deployment, see
+    Web::Simple::Deployment. To get help with Web::Simple, please connect to
+    the irc.perl.org IRC network and join #web-simple.
 
 DESCRIPTION
     The philosophy of Web::Simple is to keep to an absolute bare minimum for
@@ -624,10 +629,30 @@ COMMUNITY AND SUPPORT
       git clone git://git.shadowcat.co.uk/catagits/Web-Simple.git
 
 AUTHOR
-    Matt S. Trout <mst@shadowcat.co.uk>
+    Matt S. Trout (mst) <mst@shadowcat.co.uk>
 
 CONTRIBUTORS
-    None required yet. Maybe this module is perfect (hahahahaha ...).
+    Devin Austin (dhoss) <dhoss@cpan.org>
+
+    Arthur Axel 'fREW' Schmidt <frioux@gmail.com>
+
+    gregor herrmann (gregoa) <gregoa@debian.org>
+
+    John Napiorkowski (jnap) <jjn1056@yahoo.com>
+
+    Josh McMichael <jmcmicha@linus222.gsc.wustl.edu>
+
+    Justin Hunter <justin.d.hunter@gmail.com>
+
+    Kjetil Kjernsmo <kjetil@kjernsmo.net>
+
+    markie <markie@nulletch64.dreamhost.com>
+
+    Christian Walde (Mithaldu) <walde.christian@googlemail.com>
+
+    nperez <nperez@cpan.org>
+
+    Robin Edwards <robin.ge@gmail.com>
 
 COPYRIGHT
     Copyright (c) 2010 the Web::Simple "AUTHOR" and "CONTRIBUTORS" as listed
@@ -636,11 +661,4 @@ COPYRIGHT
 LICENSE
     This library is free software and may be distributed under the same
     terms as perl itself.
-
-POD ERRORS
-    Hey! The above document had some coding errors, which are explained
-    below:
-
-    Around line 626:
-        You forgot a '=back' before '=head2'
 

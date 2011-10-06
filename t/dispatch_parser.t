@@ -8,193 +8,209 @@ use Web::Dispatch::Parser;
 my $dp = Web::Dispatch::Parser->new;
 
 {
-   my $get = $dp->parse('GET');
+  my $all = $dp->parse('');
 
-   is_deeply(
-     [ $get->({ REQUEST_METHOD => 'GET' }) ],
-     [ {} ],
-     'GET matches'
-   );
+  is_deeply(
+    [ $all->({ REQUEST_METHOD => 'GET' }) ],
+    [ {} ],
+    'GET matches'
+  );
 
-   is_deeply(
-     [ $get->({ REQUEST_METHOD => 'POST' }) ],
-     [],
-     'POST does not match'
-   );
+  is_deeply(
+    [ $all->({ REQUEST_METHOD => 'POST' }) ],
+    [ {} ],
+    'POST matches'
+  );
+};
+
+{
+  my $get = $dp->parse('GET');
+
+  is_deeply(
+    [ $get->({ REQUEST_METHOD => 'GET' }) ],
+    [ {} ],
+    'GET matches'
+  );
+
+  is_deeply(
+    [ $get->({ REQUEST_METHOD => 'POST' }) ],
+    [],
+    'POST does not match'
+  );
 }
 
 {
-   my $html = $dp->parse('.html');
+  my $html = $dp->parse('.html');
 
-   is_deeply(
-     [ $html->({ PATH_INFO => '/foo/bar.html' }) ],
-     [ { } ],
-     '.html matches'
-   );
+  is_deeply(
+    [ $html->({ PATH_INFO => '/foo/bar.html' }) ],
+    [ { } ],
+    '.html matches'
+  );
 
-   is_deeply(
-     [ $html->({ PATH_INFO => '/foo/bar.xml' }) ],
-     [],
-     '.xml does not match .html'
-   );
+  is_deeply(
+    [ $html->({ PATH_INFO => '/foo/bar.xml' }) ],
+    [],
+    '.xml does not match .html'
+  );
 }
 
 {
-   my $any_ext = $dp->parse('.*');
+  my $any_ext = $dp->parse('.*');
 
-   is_deeply(
-     [ $any_ext->({ PATH_INFO => '/foo/bar.html' }) ],
-     [ { }, 'html' ],
-     '.html matches .* and extension returned'
-   );
+  is_deeply(
+    [ $any_ext->({ PATH_INFO => '/foo/bar.html' }) ],
+    [ { }, 'html' ],
+    '.html matches .* and extension returned'
+  );
 
-   is_deeply(
-     [ $any_ext->({ PATH_INFO => '/foo/bar' }) ],
-     [],
-     'no extension does not match .*'
-   );
+  is_deeply(
+    [ $any_ext->({ PATH_INFO => '/foo/bar' }) ],
+    [],
+    'no extension does not match .*'
+  );
 }
 
 {
-   my $slash = $dp->parse('/');
+  my $slash = $dp->parse('/');
 
-   is_deeply(
-     [ $slash->({ PATH_INFO => '/' }) ],
-     [ {} ],
-     '/ matches /'
-   );
+  is_deeply(
+    [ $slash->({ PATH_INFO => '/' }) ],
+    [ {} ],
+    '/ matches /'
+  );
 
-   is_deeply(
-     [ $slash->({ PATH_INFO => '/foo' }) ],
-     [ ],
-     '/foo does not match /'
-   );
+  is_deeply(
+    [ $slash->({ PATH_INFO => '/foo' }) ],
+    [ ],
+    '/foo does not match /'
+  );
 }
 
 {
-   my $post = $dp->parse('/post/*');
+  my $post = $dp->parse('/post/*');
 
-   is_deeply(
-     [ $post->({ PATH_INFO => '/post/one' }) ],
-     [ {}, 'one' ],
-     '/post/one parses out one'
-   );
+  is_deeply(
+    [ $post->({ PATH_INFO => '/post/one' }) ],
+    [ {}, 'one' ],
+    '/post/one parses out one'
+  );
 
-   is_deeply(
-     [ $post->({ PATH_INFO => '/post/one/' }) ],
-     [],
-     '/post/one/ does not match'
-   );
+  is_deeply(
+    [ $post->({ PATH_INFO => '/post/one/' }) ],
+    [],
+    '/post/one/ does not match'
+  );
 
-   is_deeply(
-     [ $post->({ PATH_INFO => '/post/one.html' }) ],
-     [ {}, 'one' ],
-     '/post/one.html still parses out one'
-   );
+  is_deeply(
+    [ $post->({ PATH_INFO => '/post/one.html' }) ],
+    [ {}, 'one' ],
+    '/post/one.html still parses out one'
+  );
 }
 
 {
-   my $post = $dp->parse('/foo-bar/*');
+  my $post = $dp->parse('/foo-bar/*');
 
-   is_deeply(
-     [ $post->({ PATH_INFO => '/foo-bar/one' }) ],
-     [ {}, 'one' ],
-     '/foo-bar/one parses out one'
-   );
+  is_deeply(
+    [ $post->({ PATH_INFO => '/foo-bar/one' }) ],
+    [ {}, 'one' ],
+    '/foo-bar/one parses out one'
+  );
 
-   is_deeply(
-     [ $post->({ PATH_INFO => '/foo-bar/one/' }) ],
-     [],
-     '/foo-bar/one/ does not match'
-   );
+  is_deeply(
+    [ $post->({ PATH_INFO => '/foo-bar/one/' }) ],
+    [],
+    '/foo-bar/one/ does not match'
+  );
 }
 
 {
-   my $combi = $dp->parse('GET+/post/*');
+  my $combi = $dp->parse('GET+/post/*');
 
-   is_deeply(
-     [ $combi->({ PATH_INFO => '/post/one', REQUEST_METHOD => 'GET' }) ],
-     [ {}, 'one' ],
-     '/post/one parses out one'
-   );
+  is_deeply(
+    [ $combi->({ PATH_INFO => '/post/one', REQUEST_METHOD => 'GET' }) ],
+    [ {}, 'one' ],
+    '/post/one parses out one'
+  );
 
-   is_deeply(
-     [ $combi->({ PATH_INFO => '/post/one/', REQUEST_METHOD => 'GET' }) ],
-     [],
-     '/post/one/ does not match'
-   );
+  is_deeply(
+    [ $combi->({ PATH_INFO => '/post/one/', REQUEST_METHOD => 'GET' }) ],
+    [],
+    '/post/one/ does not match'
+  );
 
-   is_deeply(
-     [ $combi->({ PATH_INFO => '/post/one', REQUEST_METHOD => 'POST' }) ],
-     [],
-     'POST /post/one does not match'
-   );
+  is_deeply(
+    [ $combi->({ PATH_INFO => '/post/one', REQUEST_METHOD => 'POST' }) ],
+    [],
+    'POST /post/one does not match'
+  );
 }
 
 {
-   my $or = $dp->parse('GET|POST');
+  my $or = $dp->parse('GET|POST');
 
-   foreach my $meth (qw(GET POST)) {
+  foreach my $meth (qw(GET POST)) {
 
-     is_deeply(
-       [ $or->({ REQUEST_METHOD => $meth }) ],
-       [ {} ],
-       'GET|POST matches method '.$meth
-     );
-   }
+    is_deeply(
+      [ $or->({ REQUEST_METHOD => $meth }) ],
+      [ {} ],
+      'GET|POST matches method '.$meth
+    );
+  }
 
-   is_deeply(
-     [ $or->({ REQUEST_METHOD => 'PUT' }) ],
-     [],
-     'GET|POST does not match PUT'
-   );
+  is_deeply(
+    [ $or->({ REQUEST_METHOD => 'PUT' }) ],
+    [],
+    'GET|POST does not match PUT'
+  );
 }
 
 {
-   my $or = $dp->parse('GET|POST|DELETE');
+  my $or = $dp->parse('GET|POST|DELETE');
 
-   foreach my $meth (qw(GET POST DELETE)) {
+  foreach my $meth (qw(GET POST DELETE)) {
 
-     is_deeply(
-       [ $or->({ REQUEST_METHOD => $meth }) ],
-       [ {} ],
-       'GET|POST|DELETE matches method '.$meth
-     );
-   }
+    is_deeply(
+      [ $or->({ REQUEST_METHOD => $meth }) ],
+      [ {} ],
+      'GET|POST|DELETE matches method '.$meth
+    );
+  }
 
-   is_deeply(
-     [ $or->({ REQUEST_METHOD => 'PUT' }) ],
-     [],
-     'GET|POST|DELETE does not match PUT'
-   );
+  is_deeply(
+    [ $or->({ REQUEST_METHOD => 'PUT' }) ],
+    [],
+    'GET|POST|DELETE does not match PUT'
+  );
 }
 
 {
-   my $nest = $dp->parse('(GET+/foo)|POST');
+  my $nest = $dp->parse('(GET+/foo)|POST');
 
-   is_deeply(
-     [ $nest->({ PATH_INFO => '/foo', REQUEST_METHOD => 'GET' }) ],
-     [ {} ],
-     '(GET+/foo)|POST matches GET /foo'
-   );
+  is_deeply(
+    [ $nest->({ PATH_INFO => '/foo', REQUEST_METHOD => 'GET' }) ],
+    [ {} ],
+    '(GET+/foo)|POST matches GET /foo'
+  );
 
-   is_deeply(
-     [ $nest->({ PATH_INFO => '/bar', REQUEST_METHOD => 'GET' }) ],
-     [],
-     '(GET+/foo)|POST does not match GET /bar'
-   );
+  is_deeply(
+    [ $nest->({ PATH_INFO => '/bar', REQUEST_METHOD => 'GET' }) ],
+    [],
+    '(GET+/foo)|POST does not match GET /bar'
+  );
 
-   is_deeply(
-     [ $nest->({ PATH_INFO => '/bar', REQUEST_METHOD => 'POST' }) ],
-     [ {} ],
-     '(GET+/foo)|POST matches POST /bar'
-   );
+  is_deeply(
+    [ $nest->({ PATH_INFO => '/bar', REQUEST_METHOD => 'POST' }) ],
+    [ {} ],
+    '(GET+/foo)|POST matches POST /bar'
+  );
 
-   is_deeply(
-     [ $nest->({ PATH_INFO => '/foo', REQUEST_METHOD => 'PUT' }) ],
-     [],
-     '(GET+/foo)|POST does not match PUT /foo'
-   );
+  is_deeply(
+    [ $nest->({ PATH_INFO => '/foo', REQUEST_METHOD => 'PUT' }) ],
+    [],
+    '(GET+/foo)|POST does not match PUT /foo'
+  );
 }
 
 {
@@ -216,47 +232,47 @@ my $dp = Web::Dispatch::Parser->new;
 }
 
 {
-   my $not = $dp->parse('!.html+.*');
+  my $not = $dp->parse('!.html+.*');
 
-   is_deeply(
-     [ $not->({ PATH_INFO => '/foo.xml' }) ],
-     [ {}, 'xml' ],
-     '!.html+.* matches /foo.xml'
-   );
+  is_deeply(
+    [ $not->({ PATH_INFO => '/foo.xml' }) ],
+    [ {}, 'xml' ],
+    '!.html+.* matches /foo.xml'
+  );
 
-   is_deeply(
-     [ $not->({ PATH_INFO => '/foo.html' }) ],
-     [],
-     '!.html+.* does not match /foo.html'
-   );
+  is_deeply(
+    [ $not->({ PATH_INFO => '/foo.html' }) ],
+    [],
+    '!.html+.* does not match /foo.html'
+  );
 
-   is_deeply(
-     [ $not->({ PATH_INFO => '/foo' }) ],
-     [],
-     '!.html+.* does not match /foo'
-   );
+  is_deeply(
+    [ $not->({ PATH_INFO => '/foo' }) ],
+    [],
+    '!.html+.* does not match /foo'
+  );
 }
 
 {
-   my $sub = $dp->parse('/foo/*/...');
+  my $sub = $dp->parse('/foo/*/...');
 
-   is_deeply(
-     [ $sub->({ PATH_INFO => '/foo/1/bar' }) ],
-     [ { PATH_INFO => '/bar', SCRIPT_NAME => '/foo/1' }, 1 ],
-     '/foo/*/... matches /foo/1/bar and strips to /bar'
-   );
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo/1/bar' }) ],
+    [ { PATH_INFO => '/bar', SCRIPT_NAME => '/foo/1' }, 1 ],
+    '/foo/*/... matches /foo/1/bar and strips to /bar'
+  );
 
-   is_deeply(
-     [ $sub->({ PATH_INFO => '/foo/1/' }) ],
-     [ { PATH_INFO => '/', SCRIPT_NAME => '/foo/1' }, 1 ],
-     '/foo/*/... matches /foo/1/bar and strips to /'
-   );
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo/1/' }) ],
+    [ { PATH_INFO => '/', SCRIPT_NAME => '/foo/1' }, 1 ],
+    '/foo/*/... matches /foo/1/bar and strips to /'
+  );
 
-   is_deeply(
-     [ $sub->({ PATH_INFO => '/foo/1' }) ],
-     [],
-     '/foo/*/... does not match /foo/1 (no trailing /)'
-   );
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo/1' }) ],
+    [],
+    '/foo/*/... does not match /foo/1 (no trailing /)'
+  );
 }
 
 {
@@ -281,69 +297,69 @@ my $dp = Web::Dispatch::Parser->new;
 #
 
 my $q = 'foo=FOO&bar=BAR1&baz=one+two&quux=QUUX1&quux=QUUX2'
-    .'&bar=BAR2&quux=QUUX3&evil=%2F';
+  .'&bar=BAR2&quux=QUUX3&evil=%2F';
 
 my %all_single = (
-    foo => 'FOO',
-    bar => 'BAR2',
-    baz => 'one two',
-    quux => 'QUUX3',
-    evil => '/',
+  foo => 'FOO',
+  bar => 'BAR2',
+  baz => 'one two',
+  quux => 'QUUX3',
+  evil => '/',
 );
 
 my %all_multi = (
-    foo => [ 'FOO' ],
-    bar => [ qw(BAR1 BAR2) ],
-    baz => [ 'one two' ],
-    quux => [ qw(QUUX1 QUUX2 QUUX3) ],
-    evil => [ '/' ],
+  foo => [ 'FOO' ],
+  bar => [ qw(BAR1 BAR2) ],
+  baz => [ 'one two' ],
+  quux => [ qw(QUUX1 QUUX2 QUUX3) ],
+  evil => [ '/' ],
 );
 
 foreach my $lose ('?foo=','?:foo=','?@foo=','?:@foo=') {
-    my $foo = $dp->parse($lose);
+  my $foo = $dp->parse($lose);
 
-    is_deeply(
-        [ $foo->({ QUERY_STRING => '' }) ],
-        [],
-        "${lose} fails with no query"
-    );
+  is_deeply(
+    [ $foo->({ QUERY_STRING => '' }) ],
+    [],
+    "${lose} fails with no query"
+  );
 
-    is_deeply(
-        [ $foo->({ QUERY_STRING => 'bar=baz' }) ],
-        [],
-        "${lose} fails with query missing foo key"
-    );
+  is_deeply(
+    [ $foo->({ QUERY_STRING => 'bar=baz' }) ],
+    [],
+    "${lose} fails with query missing foo key"
+  );
 }
 
 foreach my $win (
-    [ '?foo=' => 'FOO' ],
-    [ '?:foo=' => { foo => 'FOO' } ],
-    [ '?spoo~' => undef ],
-    [ '?:spoo~' => {} ],
-    [ '?@spoo~' => [] ],
-    [ '?:@spoo~' => { spoo => [] } ],
-    [ '?bar=' => 'BAR2' ],
-    [ '?:bar=' => { bar => 'BAR2' } ],
-    [ '?@bar=' => [ qw(BAR1 BAR2) ] ],
-    [ '?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
-    [ '?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
-    [ '?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
-    [ '?*' => \%all_single ],
-    [ '?@*' => \%all_multi ],
-    [ '?foo=&@*' => 'FOO', \%all_multi ],
-    [ '?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
-    [ '?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '?foo=' => 'FOO' ],
+  [ '?:foo=' => { foo => 'FOO' } ],
+  [ '?spoo~' => undef ],
+  [ '?:spoo~' => {} ],
+  [ '?@spoo~' => [] ],
+  [ '?:@spoo~' => { spoo => [] } ],
+  [ '?bar=' => 'BAR2' ],
+  [ '?:bar=' => { bar => 'BAR2' } ],
+  [ '?@bar=' => [ qw(BAR1 BAR2) ] ],
+  [ '?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+  [ '?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+  [ '?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+  [ '?*' => \%all_single ],
+  [ '?@*' => \%all_multi ],
+  [ '?foo=&@*' => 'FOO', \%all_multi ],
+  [ '?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+  [ '?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
 ) {
-    my ($spec, @res) = @$win;
-    my $match = $dp->parse($spec);
-    #use Data::Dump::Streamer; warn Dump($match);
-    is_deeply(
-        [ $match->({ QUERY_STRING => $q }) ],
-        [ {}, @res ],
-        "${spec} matches correctly"
-    );
+  my ($spec, @res) = @$win;
+  my $match = $dp->parse($spec);
+  #use Data::Dump::Streamer; warn Dump($match);
+  is_deeply(
+    [ $match->({ QUERY_STRING => $q }) ],
+    [ {}, @res ],
+    "${spec} matches correctly"
+  );
 }
 
 #
@@ -351,50 +367,50 @@ foreach my $win (
 #
 
 foreach my $lose2 ('/foo/bar/+?foo=','/foo/bar/+?:foo=','/foo/bar/+?@foo=','/foo/bar/+?:@foo=') {
-    my $foo = $dp->parse($lose2);
+  my $foo = $dp->parse($lose2);
 
-    is_deeply(
-        [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => '' }) ],
-        [ ],
-        "${lose2} fails with no query"
-    );
+  is_deeply(
+    [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => '' }) ],
+    [ ],
+    "${lose2} fails with no query"
+  );
 
-    is_deeply(
-        [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => 'bar=baz' }) ],
-        [ ],
-        "${lose2} fails with query missing foo key"
-    );
+  is_deeply(
+    [ $foo->({ PATH_INFO => '/foo/bar/', QUERY_STRING => 'bar=baz' }) ],
+    [ ],
+    "${lose2} fails with query missing foo key"
+  );
 }
 
 foreach my $win2 (
-    [ '/foo/bar/+?foo=' => 'FOO' ],
-    [ '/foo/bar/+?:foo=' => { foo => 'FOO' } ],
-    [ '/foo/bar/+?spoo~' => undef ],
-    [ '/foo/bar/+?:spoo~' => {} ],
-    [ '/foo/bar/+?@spoo~' => [] ],
-    [ '/foo/bar/+?:@spoo~' => { spoo => [] } ],
-    [ '/foo/bar/+?bar=' => 'BAR2' ],
-    [ '/foo/bar/+?:bar=' => { bar => 'BAR2' } ],
-    [ '/foo/bar/+?@bar=' => [ qw(BAR1 BAR2) ] ],
-    [ '/foo/bar/+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar/+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
-    [ '/foo/bar/+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar/+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar/+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
-    [ '/foo/bar/+?*' => \%all_single ],
-    [ '/foo/bar/+?@*' => \%all_multi ],
-    [ '/foo/bar/+?foo=&@*' => 'FOO', \%all_multi ],
-    [ '/foo/bar/+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
-    [ '/foo/bar/+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar/+?foo=' => 'FOO' ],
+  [ '/foo/bar/+?:foo=' => { foo => 'FOO' } ],
+  [ '/foo/bar/+?spoo~' => undef ],
+  [ '/foo/bar/+?:spoo~' => {} ],
+  [ '/foo/bar/+?@spoo~' => [] ],
+  [ '/foo/bar/+?:@spoo~' => { spoo => [] } ],
+  [ '/foo/bar/+?bar=' => 'BAR2' ],
+  [ '/foo/bar/+?:bar=' => { bar => 'BAR2' } ],
+  [ '/foo/bar/+?@bar=' => [ qw(BAR1 BAR2) ] ],
+  [ '/foo/bar/+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar/+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+  [ '/foo/bar/+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar/+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar/+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+  [ '/foo/bar/+?*' => \%all_single ],
+  [ '/foo/bar/+?@*' => \%all_multi ],
+  [ '/foo/bar/+?foo=&@*' => 'FOO', \%all_multi ],
+  [ '/foo/bar/+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+  [ '/foo/bar/+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
 ) {
-    my ($spec, @res) = @$win2;
-    my $match = $dp->parse($spec);
-    # use Data::Dump::Streamer; warn Dump($match);
-    is_deeply(
-        [ $match->({ PATH_INFO => '/foo/bar/', QUERY_STRING => $q }) ],
-        [ {}, @res ],
-        "${spec} matches correctly"
-    );
+  my ($spec, @res) = @$win2;
+  my $match = $dp->parse($spec);
+  # use Data::Dump::Streamer; warn Dump($match);
+  is_deeply(
+    [ $match->({ PATH_INFO => '/foo/bar/', QUERY_STRING => $q }) ],
+    [ {}, @res ],
+    "${spec} matches correctly"
+  );
 }
 
 #
@@ -402,48 +418,48 @@ foreach my $win2 (
 #
 
 foreach my $lose3 ('/foo/bar+?foo=','/foo/bar+?:foo=','/foo/bar+?@foo=','/foo/bar+?:@foo=') {
-    my $foo = $dp->parse($lose3);
+  my $foo = $dp->parse($lose3);
 
-    is_deeply(
-        [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => '' }) ],
-        [ ],
-        "${lose3} fails with no query"
-    );
+  is_deeply(
+    [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => '' }) ],
+    [ ],
+    "${lose3} fails with no query"
+  );
 
-    is_deeply(
-        [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => 'bar=baz' }) ],
-        [ ],
-        "${lose3} fails with query missing foo key"
-    );
+  is_deeply(
+    [ $foo->({ PATH_INFO => '/foo/bar', QUERY_STRING => 'bar=baz' }) ],
+    [ ],
+    "${lose3} fails with query missing foo key"
+  );
 }
 
 foreach my $win3 (
-    [ '/foo/bar+?foo=' => 'FOO' ],
-    [ '/foo/bar+?:foo=' => { foo => 'FOO' } ],
-    [ '/foo/bar+?spoo~' => undef ],
-    [ '/foo/bar+?:spoo~' => {} ],
-    [ '/foo/bar+?@spoo~' => [] ],
-    [ '/foo/bar+?:@spoo~' => { spoo => [] } ],
-    [ '/foo/bar+?bar=' => 'BAR2' ],
-    [ '/foo/bar+?:bar=' => { bar => 'BAR2' } ],
-    [ '/foo/bar+?@bar=' => [ qw(BAR1 BAR2) ] ],
-    [ '/foo/bar+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
-    [ '/foo/bar+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
-    [ '/foo/bar+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
-    [ '/foo/bar+?*' => \%all_single ],
-    [ '/foo/bar+?@*' => \%all_multi ],
-    [ '/foo/bar+?foo=&@*' => 'FOO', \%all_multi ],
-    [ '/foo/bar+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
-    [ '/foo/bar+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar+?foo=' => 'FOO' ],
+  [ '/foo/bar+?:foo=' => { foo => 'FOO' } ],
+  [ '/foo/bar+?spoo~' => undef ],
+  [ '/foo/bar+?:spoo~' => {} ],
+  [ '/foo/bar+?@spoo~' => [] ],
+  [ '/foo/bar+?:@spoo~' => { spoo => [] } ],
+  [ '/foo/bar+?bar=' => 'BAR2' ],
+  [ '/foo/bar+?:bar=' => { bar => 'BAR2' } ],
+  [ '/foo/bar+?@bar=' => [ qw(BAR1 BAR2) ] ],
+  [ '/foo/bar+?:@bar=' => { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar+?foo=&@bar=' => 'FOO', [ qw(BAR1 BAR2) ] ],
+  [ '/foo/bar+?foo=&:@bar=' => 'FOO', { bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar+?:foo=&:@bar=' => { foo => 'FOO', bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar+?:baz=&:evil=' => { baz => 'one two', evil => '/' } ],
+  [ '/foo/bar+?*' => \%all_single ],
+  [ '/foo/bar+?@*' => \%all_multi ],
+  [ '/foo/bar+?foo=&@*' => 'FOO', \%all_multi ],
+  [ '/foo/bar+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
+  [ '/foo/bar+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
 ) {
-    my ($spec, @res) = @$win3;
-    my $match = $dp->parse($spec);
-    # use Data::Dump::Streamer; warn Dump($match);
-    is_deeply(
-        [ $match->({ PATH_INFO => '/foo/bar', QUERY_STRING => $q }) ],
-        [ {}, @res ],
-        "${spec} matches correctly"
-    );
+  my ($spec, @res) = @$win3;
+  my $match = $dp->parse($spec);
+  # use Data::Dump::Streamer; warn Dump($match);
+  is_deeply(
+    [ $match->({ PATH_INFO => '/foo/bar', QUERY_STRING => $q }) ],
+    [ {}, @res ],
+    "${spec} matches correctly"
+  );
 }
