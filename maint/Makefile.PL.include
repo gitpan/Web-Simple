@@ -7,3 +7,4 @@ author 'mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>';
 manifest_include 't/globbery' => qr/.*/;
 manifest_include 'docs' => qr/.*/;
 manifest_include 'examples' => qr/.*/;
+manifest_include 'lib' => qr/.*\.pod$/;

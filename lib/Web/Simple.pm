@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.010';
+our $VERSION = '0.011';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -196,6 +196,17 @@ However, generally, instead of that, you return a set of dispatch subs:
     sub (/) { redispatch_to '/index.html' },
     sub (/user/*) { $self->show_user($_[1]) },
     ...
+  }
+
+Well, a sub is a valid PSGI response too (for ultimate streaming and async
+cleverness). If you want to return a PSGI sub you have to wrap it into an
+array ref.
+
+  sub dispatch_request {
+    [ sub { 
+        my $respond = shift;
+        # This is pure PSGI here, so read perldoc PSGI
+    } ]
   }
 
 If you return a subroutine with a prototype, the prototype is treated

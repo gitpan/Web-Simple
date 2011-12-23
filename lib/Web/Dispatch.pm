@@ -28,7 +28,9 @@ sub _build__parser {
 
 sub call {
   my ($self, $env) = @_;
-  $self->_dispatch($env, $self->app);
+  my $res = $self->_dispatch($env, $self->app);
+  return $res->[0] if ref($res) eq 'ARRAY' and @{$res} == 1 and ref($res->[0]) eq 'CODE';
+  return $res;
 }
 
 sub _dispatch {
@@ -63,7 +65,7 @@ sub _have_result {
   my ($self, $first, $result, $match, $env) = @_;
 
   if (ref($first) eq 'ARRAY') {
-    return $self->_unpack_array_match($first);
+    return $first;
   }
   elsif (blessed($first) && $first->isa('Plack::Middleware')) {
     return $self->_uplevel_middleware($first, $result);
@@ -71,17 +73,14 @@ sub _have_result {
   elsif (ref($first) eq 'HASH' and $first->{+MAGIC_MIDDLEWARE_KEY}) {
     return $self->_redispatch_with_middleware($first, $match, $env);
   }
-  elsif (blessed($first) && !$first->can('to_app')) {
+  elsif (
+    blessed($first) &&
+    not($first->can('to_app')) &&
+    not($first->isa('Web::Dispatch::Matcher'))
+  ) {
     return $first;
   }
-
   return;
-}
-
-sub _unpack_array_match {
-  my ($self, $match) = @_;
-  return $match->[0] if @{$match} == 1 and ref($match->[0]) eq 'CODE';
-  return $match;
 }
 
 sub _uplevel_middleware {
@@ -109,7 +108,9 @@ sub _to_try {
   # sub (<spec>) {}      becomes a dispatcher
   # sub {}               is a PSGI app and can be returned as is
   # '<spec>' => sub {}   becomes a dispatcher
+  # $obj isa WD:Predicates::Matcher => sub { ... } -  become a dispatcher
   # $obj w/to_app method is a Plack::App-like thing - call it to get a PSGI app
+  #
 
   if (ref($try) eq 'CODE') {
     if (defined(my $proto = prototype($try))) {
@@ -119,6 +120,15 @@ sub _to_try {
     }
   } elsif (!ref($try) and ref($more->[0]) eq 'CODE') {
     $self->_construct_node(match => $try, run => shift(@$more))->to_app;
+  } elsif (
+    (blessed($try) && $try->isa('Web::Dispatch::Matcher'))
+    and (ref($more->[0]) eq 'CODE')
+  ) {
+    $self->node_class->new({
+      %{$self->node_args},
+      match => $try,
+      run => shift(@$more)
+    })->to_app;
   } elsif (blessed($try) && $try->can('to_app')) {
     $try->to_app;
   } else {

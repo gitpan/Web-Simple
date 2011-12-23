@@ -1,4 +1,7 @@
-Change log for Web::Simple
+0.011 - 2011-12-23
+  - Add Web::Dispatch::HTTPMethods
+  - Fix [ sub {} ] for async code
+  - Support match_foo(...) => sub {} as a dispatcher return
 
 0.010 - 2011-10-06
   - Provide $app->run_test_request for use in test scripts

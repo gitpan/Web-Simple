@@ -9,6 +9,7 @@ lib/CSS/Declare.pm
 lib/HTML/Tags.pm
 lib/Plack/Middleware/Dispatch.pm
 lib/Web/Dispatch.pm
+lib/Web/Dispatch/HTTPMethods.pm
 lib/Web/Dispatch/Node.pm
 lib/Web/Dispatch/ParamParser.pm
 lib/Web/Dispatch/Parser.pm
@@ -17,7 +18,9 @@ lib/Web/Dispatch/ToApp.pm
 lib/Web/Dispatch/Upload.pm
 lib/Web/Dispatch/Wrapper.pm
 lib/Web/Simple.pm
+lib/Web/Simple/AntiquatedPerl.pod
 lib/Web/Simple/Application.pm
+lib/Web/Simple/Deployment.pod
 lib/Web/Simple/DispatchNode.pm
 lib/Web/Simple/HackedPlack.pm
 lib/XML/Tags.pm
@@ -27,15 +30,19 @@ MANIFEST			This list of files
 META.yml
 t/bloggery.t
 t/css_declare.t
+t/dispatch_misc.t
 t/dispatch_parser.t
 t/env.t
 t/globbery/one
 t/globbery/two
 t/param_parser.t
 t/post.t
+t/predicate_objects.t
 t/response-filter.t
+t/stream_test.t
 t/sub-dispatch-args.t
 t/sub-dispatch-env.t
 t/tags.t
+t/wd-http-methods.t
 META.json                                Module JSON meta-data (added by MakeMaker)
 README                                   README file (added by Distar)

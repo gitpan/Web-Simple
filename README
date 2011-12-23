@@ -161,6 +161,17 @@ DISPATCH STRATEGY
         ...
       }
 
+    Well, a sub is a valid PSGI response too (for ultimate streaming and
+    async cleverness). If you want to return a PSGI sub you have to wrap it
+    into an array ref.
+
+      sub dispatch_request {
+        [ sub { 
+            my $respond = shift;
+            # This is pure PSGI here, so read perldoc PSGI
+        } ]
+      }
+
     If you return a subroutine with a prototype, the prototype is treated as
     a match specification - and if the test is passed, the body of the sub
     is called as a method any matched arguments (see below for more

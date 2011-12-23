@@ -6,7 +6,7 @@ use ExtUtils::MakeMaker;
 (do 'maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
 
 WriteMakefile(
-  NAME => 'Web-Simple',
+  NAME => 'Web::Simple',
   VERSION_FROM => 'lib/Web/Simple.pm',
   PREREQ_PM => {
     'Syntax::Keyword::Gather' => '1.001',
