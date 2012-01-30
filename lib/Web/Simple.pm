@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.011';
+our $VERSION = '0.012';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -40,7 +40,7 @@ Web::Simple - A quick and easy way to build simple web applications
   #!/usr/bin/env perl
 
   package HelloWorld;
-  use Web::Simple
+  use Web::Simple;
 
   sub dispatch_request {
     sub (GET) {
@@ -322,29 +322,14 @@ also match more than one part:
 and so on. To match an arbitrary number of parts, use -
 
   sub (/page/**) {
+    my ($self, $match) = @_;
 
-This will result in an element per /-separated part so matched. Note that
-you can do
+This will result in a single element for the entire match. Note that you can do
 
   sub (/page/**/edit) {
 
 to match an arbitrary number of parts up to but not including some final
 part.
-
-Finally,
-
-  sub (/foo/...) {
-
-Will match /foo/ on the beginning of the path -and- strip it. This is designed
-to be used to construct nested dispatch structures, but can also prove useful
-for having e.g. an optional language specification at the start of a path.
-
-Note that the '...' is a "maybe something here, maybe not" so the above
-specification will match like this:
-
-  /foo         # no match
-  /foo/        # match and strip path to '/'
-  /foo/bar/baz # match and strip path to '/bar/baz'
 
 Note: Since Web::Simple handles a concept of file extensions, * and **
 matchers will not by default match things after a final dot, and this
@@ -354,6 +339,79 @@ can be modified by using *.* and **.* in the final position, i.e.:
   /one/*.*     matches /one/two.three    and captures "two.three"
   /**          matches /one/two.three    and captures "one/two"
   /**.*        matches /one/two.three    and captures "one/two.three"
+
+Finally,
+
+  sub (/foo/...) {
+
+Will match C</foo/> on the beginning of the path -and- strip it. This is
+designed to be used to construct nested dispatch structures, but can also prove
+useful for having e.g. an optional language specification at the start of a
+path.
+
+Note that the '...' is a "maybe something here, maybe not" so the above
+specification will match like this:
+
+  /foo         # no match
+  /foo/        # match and strip path to '/'
+  /foo/bar/baz # match and strip path to '/bar/baz'
+
+Almost the same,
+
+  sub (/foo...) {
+
+Will match on C</foo/bar/baz>, but also include C</foo>.  Otherwise it
+operates the same way as C</foo/...>.
+
+  /foo         # match and strip path to ''
+  /foo/        # match and strip path to '/'
+  /foo/bar/baz # match and strip path to '/bar/baz'
+
+Please note the difference between C<sub(/foo/...)> and C<sub(/foo...)>.  In
+the first case, this is expecting to find something after C</foo> (and fails to
+match if nothing is found), while in the second case we can match both C</foo>
+and C</foo/more/to/come>.  The following are roughly the same:
+
+  sub (/foo)   { 'I match /foo' },
+  sub (/foo/...) {
+    sub (/bar) { 'I match /foo/bar' },
+    sub (/*)   { 'I match /foo/{id}' },
+  }
+
+Versus
+
+  sub (/foo...) {
+    sub (~)    { 'I match /foo' },
+    sub (/bar) { 'I match /foo/bar' },
+    sub (/*)   { 'I match /foo/{id}' },
+  }
+
+You may prefer the latter example should you wish to take advantage of
+subdispatchers to scope common activities.  For example:
+
+  sub (/user...) {
+    my $user_rs = $schema->resultset('User');
+    sub (~) { $user_rs },
+    sub (/*) { $user_rs->find($_[1]) },
+  }
+
+You should note the special case path match C<sub (~)> which is only meaningful
+when it is contained in this type of path match. It matches to an empty path.
+
+=head4 C</foo> and C</foo/> are different specs
+
+As you may have noticed with the difference between C<sub(/foo/...)> and
+C<sub(/foo...)>, trailing slashes in path specs are significant. This is
+intentional and necessary to retain the ability to use relative links on
+websites. Let's demonstrate on this link:
+
+  <a href="bar">bar</a>
+
+If the user loads the url C</foo/> and clicks on this link, they will be
+sent to C</foo/bar>. However when they are on the url C</foo> and click this
+link, then they will be sent to C</bar>.
+
+This makes it necessary to be explicit about the trailing slash.
 
 =head3 Extension matches
 
@@ -706,7 +764,7 @@ John Napiorkowski (jnap) <jjn1056@yahoo.com>
 
 Josh McMichael <jmcmicha@linus222.gsc.wustl.edu>
 
-Justin Hunter <justin.d.hunter@gmail.com>
+Justin Hunter (arcanez) <justin.d.hunter@gmail.com>
 
 Kjetil Kjernsmo <kjetil@kjernsmo.net>
 
@@ -718,9 +776,11 @@ nperez <nperez@cpan.org>
 
 Robin Edwards <robin.ge@gmail.com>
 
+Andrew Rodland (hobbs) <andrew@cleverdomain.org>
+
 =head1 COPYRIGHT
 
-Copyright (c) 2010 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
+Copyright (c) 2011 the Web::Simple L</AUTHOR> and L</CONTRIBUTORS>
 as listed above.
 
 =head1 LICENSE

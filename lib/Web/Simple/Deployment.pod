@@ -19,6 +19,13 @@ Web::Simple-module:
 
 Save that as script.cgi and your web server will handle it correctly.
 
+=head1 Plack-Server
+
+This works in with exactly the same code as CGI deployment. However instead of
+letting your web server load script.cgi, you run this on the command line:
+
+  plackup script.cgi
+
 =head2 Self-contained CGI
 
 Sometimes your app is so small that you have only one or two tiny classes that

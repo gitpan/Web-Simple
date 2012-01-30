@@ -3,6 +3,8 @@ package Web::Dispatch::ParamParser;
 use strict;
 use warnings FATAL => 'all';
 
+use Encode 'decode_utf8';
+
 sub UNPACKED_QUERY () { __PACKAGE__.'.unpacked_query' }
 sub UNPACKED_BODY () { __PACKAGE__.'.unpacked_body' }
 sub UNPACKED_BODY_OBJECT () { __PACKAGE__.'.unpacked_body_object' }
@@ -102,8 +104,9 @@ sub get_unpacked_uploads_from {
     my ($name, $value);
     foreach my $pair (split(/[&;](?:\s+)?/, $params)) {
       next unless (($name, $value) = split(/=/, $pair, 2)) == 2;
-        
+
       s/$DECODE/$hex_chr{$1}/gs for ($name, $value);
+      $_ = decode_utf8 $_ for ($name, $value);
 
       push(@{$unpack{$name}||=[]}, $value);
     }

@@ -431,7 +431,7 @@ Matt S. Trout <mst@shadowcat.co.uk>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2010 Matt S. Trout <mst@shadowcat.co.uk>
+Copyright (c) 2011 Matt S. Trout <mst@shadowcat.co.uk>
 
 =head1 LICENSE
 

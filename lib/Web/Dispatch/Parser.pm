@@ -35,7 +35,7 @@ sub parse {
 
 sub _parse_spec {
   my ($self, $spec, $nested) = @_;
-  return sub { {} } unless length($spec);
+  return match_true() unless length($spec);
   for ($_[1]) {
     my @match;
     PARSE: { do {
@@ -83,6 +83,11 @@ sub _parse_spec_combinator {
 sub _parse_spec_section {
   my ($self) = @_;
   for ($_[1]) {
+
+    # ~
+
+    /\G~/gc and
+      return match_path('^$');
 
     # GET POST PUT HEAD ...
 
@@ -138,6 +143,11 @@ sub _url_path_match {
         };
       push @path, $self->_url_path_segment_match($_)
         or $self->_blam("Couldn't parse path match segment");
+      /\G\.\.\./gc
+        and do {
+          $end = '(|/.*)';
+          last PATH;
+        };
       /\G\.\*/gc
         and do {
           $keep_dot = 1;
@@ -165,7 +175,17 @@ sub _url_path_segment_match {
     /\G(?:(?=[+|\)])|$)/gc and
       return '';
     # word chars only -> exact path part match
-    /\G([\w\-]+)/gc and
+    /
+        \G(
+            (?:             # start matching at a space followed by:
+                    [\w\-]  # word chars or dashes
+                |           # OR
+                    \.      # a period
+                    (?!\.)  # not followed by another period
+            )
+            +               # then grab as far as possible
+        )
+    /gcx and
       return "\Q$1";
     # ** -> capture unlimited path parts
     /\G\*\*/gc and

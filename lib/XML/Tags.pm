@@ -17,6 +17,7 @@ sub import {
   my $target = $class->_find_target(0, $opts);
   my @tags = $class->_find_tags(@args);
   my $unex = $class->_export_tags_into($target => @tags);
+  if ($INC{"bareword/filehandles.pm"}) { bareword::filehandles->import }
   $class->_install_unexporter($unex);
   $IN_SCOPE = 1;
 }

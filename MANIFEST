@@ -35,6 +35,7 @@ t/dispatch_parser.t
 t/env.t
 t/globbery/one
 t/globbery/two
+t/match-home.t
 t/param_parser.t
 t/post.t
 t/predicate_objects.t

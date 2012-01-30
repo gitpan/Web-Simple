@@ -5,10 +5,18 @@ use base qw(Exporter);
 
 our @EXPORT = qw(
   match_and match_or match_not match_method match_path match_path_strip
-  match_extension match_query match_body match_uploads
+  match_extension match_query match_body match_uploads match_true match_false
 );
 
 sub _matcher { bless shift, 'Web::Dispatch::Matcher' }
+
+sub match_true {
+  _matcher(sub { {} });
+}
+
+sub match_false {
+  _matcher(sub {});
+}
 
 sub match_and {
   my @match = @_;

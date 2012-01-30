@@ -1,3 +1,12 @@
+0.012 - 2012-01-30
+  - Added match predicates match_true and match_false
+  - Added '~' to match an empty path
+  - Sub-dispatch via '...' is now permissible without a trailing slash
+  - Only word char sequences with singular periods are parsed as path parts now
+  - Various doc fixes
+  - All query body parameters are now decoded from UTF8
+  - Allow dots in path matches, so you can have sub (/foo.html)
+
 0.011 - 2011-12-23
   - Add Web::Dispatch::HTTPMethods
   - Fix [ sub {} ] for async code
@@ -25,7 +34,7 @@
   - Re-release due to indexing failure
 
 0.006 - 2011-02-15
-  - Fix Content-type issue (ie, Content-type: blah works, 
+  - Fix Content-type issue (ie, Content-type: blah works,
     but Content-type: blah; charset: blah shits flames)
   - Make Web::Dispatch return [\$cv] as \$cv to allow subref responses
   - Stop undef errors killing XML::Tags conversion to string

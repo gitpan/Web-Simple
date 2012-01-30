@@ -254,6 +254,28 @@ my $dp = Web::Dispatch::Parser->new;
 }
 
 {
+  my $ext = $dp->parse('/foo.bar');
+
+  is_deeply(
+    [ $ext->({ PATH_INFO => '/foo.bar' }) ],
+    [ {} ],
+    '/foo.bar matches /foo.bar'
+  );
+
+  is_deeply(
+    [ $ext->({ PATH_INFO => '/foo.bar.ext' }) ],
+    [ {} ],
+    '/foo.bar matches /foo.bar.ext'
+  );
+
+  is_deeply(
+    [ $ext->({ PATH_INFO => '/foo.notbar' }) ],
+    [],
+    '/foo.bar does not match /foo.notbar'
+  );
+}
+
+{
   my $sub = $dp->parse('/foo/*/...');
 
   is_deeply(
@@ -272,6 +294,62 @@ my $dp = Web::Dispatch::Parser->new;
     [ $sub->({ PATH_INFO => '/foo/1' }) ],
     [],
     '/foo/*/... does not match /foo/1 (no trailing /)'
+  );
+}
+
+{
+  my $sub = $dp->parse('/foo/**/belief');
+  my $match = 'barred/beyond';
+  is_deeply(
+    [ $sub->({ PATH_INFO => "/foo/${match}/belief" }) ],
+    [ {}, $match ],
+    "/foo/**/belief matches /foo/${match}/belief"
+  );
+}
+
+{
+  my $match = '~';
+  my $sub = $dp->parse($match);
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo' }) ],
+    [],
+    "$match does not match /foo"
+  );
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '' }) ],
+    [ {} ],
+    "$match matches empty path with empty env"
+  );
+}
+
+{
+  my $match = '/foo...';
+  my $sub = $dp->parse($match);
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foobar' }) ],
+    [],
+    "$match does not match /foobar"
+  );
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo/bar' }) ],
+    [ { PATH_INFO => '/bar', SCRIPT_NAME => '/foo' } ],
+    "$match matches /foo/bar and strips to /bar"
+  );
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo/' }) ],
+    [ { PATH_INFO => '/', SCRIPT_NAME => '/foo' } ],
+    "$match matches /foo/ and strips to /"
+  );
+
+  is_deeply(
+    [ $sub->({ PATH_INFO => '/foo' }) ],
+    [ { PATH_INFO => '', SCRIPT_NAME => '/foo' } ],
+    "$match matches /foo and strips to empty path"
   );
 }
 
