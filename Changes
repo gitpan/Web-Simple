@@ -1,3 +1,7 @@
+0.013 - 2012-04-03
+  - Fix a weird interaction between match-spec parsing and module loading
+    that was causing brokenness and test failures with perl 5.8.8
+
 0.012 - 2012-01-30
   - Added match predicates match_true and match_false
   - Added '~' to match an empty path

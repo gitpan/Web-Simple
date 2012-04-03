@@ -125,7 +125,16 @@ sub match_uploads {
 
 sub _param_matcher {
   my ($type, $spec) = @_;
-  require Web::Dispatch::ParamParser;
+  # We're probably parsing a match spec while building the parser, and
+  # on 5.8.8, loading ParamParser loads Encode which blows away $_ and pos.
+  # Furthermore, localizing $_ doesn't restore pos afterwards. So do this
+  # stupid thing instead to work on 5.8.8
+  my $saved_pos = pos;
+  {
+    local $_;
+    require Web::Dispatch::ParamParser;
+  }
+  pos = $saved_pos;
   my $unpack = Web::Dispatch::ParamParser->can("get_unpacked_${type}_from");
   sub {
     _extract_params($unpack->($_[0]), $spec)

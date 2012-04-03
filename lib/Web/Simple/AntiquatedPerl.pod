@@ -219,7 +219,7 @@ mongers, the slides are reproduced below.
   $^H
   %^H
   ----
-    $^H |= 0x120000;
+    $^H |= 0x20000;
     $^H{'foo'}
       = bless($foo, 'My::Foo');
   ----

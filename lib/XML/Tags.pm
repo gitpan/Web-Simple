@@ -81,7 +81,7 @@ sub _export_tags_into {
 
 sub _install_unexporter {
   my ($class, $unex) = @_;
-  $^H |= 0x120000; # localize %^H
+  $^H |= 0x20000; # localize %^H
   $^H{'XML::Tags::Unex'} = bless($unex, 'XML::Tags::Unex');
 }
 
