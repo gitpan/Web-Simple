@@ -132,7 +132,7 @@ sub _parse_spec_section {
 sub _url_path_match {
   my ($self) = @_;
   for ($_[1]) {
-    my @path;
+    my (@path, @names, $seen_nameless);
     my $end = '';
     my $keep_dot;
     PATH: while (/\G\//gc) {
@@ -141,18 +141,33 @@ sub _url_path_match {
           $end = '(/.*)';
           last PATH;
         };
-      push @path, $self->_url_path_segment_match($_)
+
+      my ($segment) = $self->_url_path_segment_match($_)
         or $self->_blam("Couldn't parse path match segment");
+
+      if (ref($segment)) {
+        ($segment, $keep_dot, my $name) = @$segment;
+        if (defined($name)) {
+          $self->_blam("Can't mix positional and named captures in path match")
+            if $seen_nameless;
+          push @names, $name;
+        } else {
+          $self->_blam("Can't mix positional and named captures in path match")
+            if @names;
+          $seen_nameless = 1;
+        }
+      }
+      push @path, $segment;
+
       /\G\.\.\./gc
         and do {
           $end = '(|/.*)';
           last PATH;
         };
       /\G\.\*/gc
-        and do {
-          $keep_dot = 1;
-          last PATH;
-        };
+        and $keep_dot = 1;
+
+      last PATH if $keep_dot;
     }
     if (@path && !$end && !$keep_dot) {
       length and $_ .= '(?:\.\w+)?' for $path[-1];
@@ -160,9 +175,9 @@ sub _url_path_match {
     my $re = '^('.join('/','',@path).')'.$end.'$';
     $re = qr/$re/;
     if ($end) {
-      return match_path_strip($re);
+      return match_path_strip($re, @names ? \@names : ());
     } else {
-      return match_path($re);
+      return match_path($re, @names ? \@names : ());
     }
   }
   return;
@@ -188,11 +203,16 @@ sub _url_path_segment_match {
     /gcx and
       return "\Q$1";
     # ** -> capture unlimited path parts
-    /\G\*\*/gc and
-      return '(.*?[^/])';
+    /\G\*\*(?:(\.\*)?\:(\w+))?/gc and
+      return [ '(.*?[^/])', $1, $2 ];
     # * -> capture path part
-    /\G\*/gc and
-      return '([^/]+?)';
+    # *:name -> capture named path part
+    /\G\*(?:(\.\*)?\:(\w+))?/gc and
+      return [ '([^/]+?)', $1, $2 ];
+
+    # :name -> capture named path part
+    /\G\:(\w+)/gc and
+      return [ '([^/]+?)', 0, $1 ];
   }
   return ();
 }

@@ -370,6 +370,24 @@ my $dp = Web::Dispatch::Parser->new;
   }
 }
 
+{
+  my @named = (
+    [ '/foo/*:foo_id' => '/foo/1' => { foo_id => 1 } ],
+    [ '/foo/:foo_id' => '/foo/1' => { foo_id => 1 } ],
+    [ '/foo/:id/**:rest' => '/foo/id/rest/of/the/path.ext'
+      => { id => 'id', rest => 'rest/of/the/path' } ],
+    [ '/foo/:id/**.*:rest' => '/foo/id/rest/of/the/path.ext'
+      => { id => 'id', rest => 'rest/of/the/path.ext' } ],
+  );
+  foreach my $n (@named) {
+    is_deeply(
+      [ $dp->parse($n->[0])->({ PATH_INFO => $n->[1] }) ],
+      [ {}, $n->[2] ],
+      "${\$n->[0]} matches ${\$n->[1]} with correct captures"
+    );
+  }
+}
+
 #
 # query string
 #

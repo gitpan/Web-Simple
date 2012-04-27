@@ -89,11 +89,25 @@ sub _test_request_spec_to_http_request {
 
   my $request = HTTP::Request->new($method => $path);
 
-  if (($method eq 'POST' or $method eq 'PUT') and @rest) {
+  my @params;
+
+  while (my ($header, $value) = splice(@rest, 0, 2)) {
+    unless ($header =~ s/:$//) {
+      push @params, $header, $value;
+    }
+    $header =~ s/_/-/g;
+    if ($header eq 'Content') {
+      $request->content($value);
+    } else {
+      $request->headers->push_header($header, $value);
+    }
+  }
+
+  if (($method eq 'POST' or $method eq 'PUT') and @params) {
     my $content = do {
       require URI;
       my $url = URI->new('http:');
-      $url->query_form(@rest);
+      $url->query_form(@params);
       $url->query;
     };
     $request->header('Content-Type' => 'application/x-www-form-urlencoded');
@@ -239,6 +253,28 @@ that path -
   
   Hello world!
 
+You can also provide a method name -
+
+  $ perl -Ilib examples/hello-world/hello-world.cgi POST /
+  405 Method Not Allowed
+  Content-Type: text/plain
+  
+  Method not allowed
+
+For a POST or PUT request, pairs on the command line will be treated
+as form variables. For any request, pairs on the command line ending in :
+are treated as headers, and 'Content:' will set the request body -
+
+  $ ./myapp POST / Accept: text/html form_field_name form_field_value
+  
+  $ ./myapp POST / Content-Type: text/json Content: '{ "json": "here" }'
+
+The body of the response is sent to STDOUT and the headers to STDERR, so
+
+  $ ./myapp GET / >index.html
+
+will generally do the right thing.
+
 Additionally, you can treat the file as though it were a standard PSGI
 application file (*.psgi).  For example you can start up up with C<plackup>
 
@@ -296,9 +332,9 @@ you need it, so don't worry about it too much.
 
 =head2 run_test_request
 
-  my $res = $app->run_test_request(GET => '/');
+  my $res = $app->run_test_request(GET => '/' => %headers);
 
-  my $res = $app->run_test_request(POST => '/' => %form);
+  my $res = $app->run_test_request(POST => '/' => %headers_or_form);
 
   my $res = $app->run_test_request($http_request);
 
@@ -309,6 +345,24 @@ If the HTTP method is POST or PUT, then a series of pairs can be passed after
 this to create a form style message body. If you need to test an upload, then
 create an L<HTTP::Request> object by hand or use the C<POST> subroutine
 provided by L<HTTP::Request::Common>.
+
+If pairs are passed where the key ends in :, it is instead treated as a
+headers, so:
+
+  my $res = $app->run_test_request(
+              POST => '/',
+             'Accept:' => 'text/html',
+              some_form_key => 'value'
+            );
+
+will do what you expect. You can also pass a special key of Content: to
+set the request body:
+
+  my $res = $app->run_test_request(
+              POST => '/',
+              'Content-Type:' => 'text/json',
+              'Content:' => '{ "json": "here" }',
+            );
 
 =head1 AUTHORS
 

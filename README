@@ -365,6 +365,25 @@ DISPATCH STRATEGY
     meaningful when it is contained in this type of path match. It matches
     to an empty path.
 
+   Naming your patch matches
+    Any */**/*.*/**.* match can be followed with :name to make it into a
+    named match, so:
+
+      sub (/*:one/*:two/*:three/*:four) {
+        "I match /1/2/3/4 capturing { one => 1, two =>  2, three => 3, four => 4 }"
+      }
+  
+      sub (/**.*:allofit) {
+        "I match anything capturing { allofit => \$whole_path }"
+      }
+
+    In the specific case of a simple single-* match, the * may be omitted,
+    to allow you to write:
+
+      sub (/:one/:two/:three/:four) {
+        "I match /1/2/3/4 capturing { one => 1, two =>  2, three => 3, four => 4 }"
+      }
+
    "/foo" and "/foo/" are different specs
     As you may have noticed with the difference between "sub(/foo/...)" and
     "sub(/foo...)", trailing slashes in path specs are significant. This is

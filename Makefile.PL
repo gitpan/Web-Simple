@@ -11,7 +11,7 @@ WriteMakefile(
   PREREQ_PM => {
     'Syntax::Keyword::Gather' => '1.001',
     'Plack' => '0.9968',
-    'Moo' => '0.009005',
+    'Moo' => '0.009014',
     'warnings::illegalproto' => '0.001',
     'Data::Dumper::Concise' => '2.020',
   },

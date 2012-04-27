@@ -1,3 +1,7 @@
+0.014 - 2012-04-27
+  - Add named path matching
+  - Allow headers on CLI calls
+
 0.013 - 2012-04-03
   - Fix a weird interaction between match-spec parsing and module loading
     that was causing brokenness and test failures with perl 5.8.8

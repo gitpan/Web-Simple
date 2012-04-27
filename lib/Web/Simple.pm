@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.013';
+our $VERSION = '0.014';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -397,6 +397,26 @@ subdispatchers to scope common activities.  For example:
 
 You should note the special case path match C<sub (~)> which is only meaningful
 when it is contained in this type of path match. It matches to an empty path.
+
+=head4 Naming your patch matches
+
+Any */**/*.*/**.* match can be followed with :name to make it into a named
+match, so:
+
+  sub (/*:one/*:two/*:three/*:four) {
+    "I match /1/2/3/4 capturing { one => 1, two =>  2, three => 3, four => 4 }"
+  }
+  
+  sub (/**.*:allofit) {
+    "I match anything capturing { allofit => \$whole_path }"
+  }
+
+In the specific case of a simple single-* match, the * may be omitted, to
+allow you to write:
+
+  sub (/:one/:two/:three/:four) {
+    "I match /1/2/3/4 capturing { one => 1, two =>  2, three => 3, four => 4 }"
+  }
 
 =head4 C</foo> and C</foo/> are different specs
 

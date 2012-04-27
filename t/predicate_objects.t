@@ -140,14 +140,14 @@ cmp_ok $get_user->code, '==', 200,
     is ref($env), 'HASH', 'Got hashref';
 }
 
-ok my $post_user = run_request(POST => 'http://localhost/user/42', [id => '99'] ),
+ok my $post_user = run_request(POST => 'http://localhost/user/42', id => '99' ),
   'post user';
 
 cmp_ok $post_user->code, '==', 200,
   '200 on POST';
 
 {
-    my ($self, $params, $env, @noextra) = @{eval $post_user->content};
+    my ($self, $params, $env, @noextra) = @{eval $post_user->content or die $@};
     is scalar(@noextra), 0, 'No extra stuff';
     is ref($self), 't::Web::Simple::SubDispatchArgs', 'got object';
     is ref($params), 'HASH', 'Got POST hashref';

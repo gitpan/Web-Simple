@@ -71,18 +71,20 @@ sub match_method {
 }
 
 sub match_path {
-  my ($re) = @_;
+  my ($re, $names) = @_;
   _matcher(sub {
     my ($env) = @_;
     if (my @cap = ($env->{PATH_INFO} =~ /$re/)) {
-      $cap[0] = {}; return @cap;
+      $cap[0] = {};
+      $cap[1] = do { my %c; @c{@$names} = splice @cap, 1; \%c } if $names;
+      return @cap;
     }
     return;
   })
 }
 
 sub match_path_strip {
-  my ($re) = @_;
+  my ($re, $names) = @_;
   _matcher(sub {
     my ($env) = @_;
     if (my @cap = ($env->{PATH_INFO} =~ /$re/)) {
@@ -90,6 +92,7 @@ sub match_path_strip {
         SCRIPT_NAME => ($env->{SCRIPT_NAME}||'').$cap[0],
         PATH_INFO => pop(@cap),
       };
+      $cap[1] = do { my %c; @c{@$names} = splice @cap, 1; \%c } if $names;
       return @cap;
     }
     return;
