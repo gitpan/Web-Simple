@@ -25,10 +25,22 @@ sub _build__dispatcher {
   require Web::Dispatch;
   require Web::Simple::DispatchNode;
   my $final = $self->_build_final_dispatcher;
+
+  # We need to weaken both the copy of $self that the
+  # app parameter will close over and the copy that'll
+  # be passed through as a node argument.
+  #
+  # To ensure that this doesn't then result in us being
+  # DESTROYed unexpectedly early, our to_psgi_app method
+  # closes back over $self
+
+  weaken($self);
+  my $node_args = { app_object => $self };
+  weaken($node_args->{app_object});
   Web::Dispatch->new(
     app => sub { $self->dispatch_request(@_), $final },
     node_class => 'Web::Simple::DispatchNode',
-    node_args => { app_object => $self }
+    node_args => $node_args
   );
 }
 
@@ -57,7 +69,16 @@ sub _run_fcgi {
 
 sub to_psgi_app {
   my $self = ref($_[0]) ? $_[0] : $_[0]->new;
-  $self->_dispatcher->to_app;
+  my $app = $self->_dispatcher->to_app;
+
+  # Close over $self to keep $self alive even though
+  # we weakened the copies the dispatcher has; the
+  # if 0 causes the ops to be optimised away to
+  # minimise the performance impact and avoid void
+  # context warnings while still doing the closing
+  # over part. As Mithaldu said: "Gnarly." ...
+
+  return sub { $self if 0; goto &$app; };
 }
 
 sub run {

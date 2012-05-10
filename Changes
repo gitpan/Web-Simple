@@ -1,3 +1,6 @@
+0.015 - 2012-05-10
+  - Fix a per-application-instance memory leak
+
 0.014 - 2012-04-27
   - Add named path matching
   - Allow headers on CLI calls

@@ -27,7 +27,6 @@ lib/XML/Tags.pm
 maint/Makefile.PL.include
 Makefile.PL
 MANIFEST			This list of files
-META.yml
 t/bloggery.t
 t/css_declare.t
 t/dispatch_misc.t
@@ -45,5 +44,6 @@ t/sub-dispatch-args.t
 t/sub-dispatch-env.t
 t/tags.t
 t/wd-http-methods.t
+META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
 README                                   README file (added by Distar)
