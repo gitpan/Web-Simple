@@ -1,5 +1,7 @@
 package Web::Simple::Application;
 
+use Scalar::Util 'weaken';
+
 use Moo;
 
 has 'config' => (

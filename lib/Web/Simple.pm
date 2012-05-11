@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.015';
+our $VERSION = '0.016';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -29,6 +29,8 @@ sub _export_into {
   (my $name = $app_package) =~ s/::/\//g;
   $INC{"${name}.pm"} = 'Set by "use Web::Simple;" invocation';
 }
+
+"Happy 62nd, wherever you are";
 
 =head1 NAME
 
@@ -809,5 +811,3 @@ This library is free software and may be distributed under the same terms
 as perl itself.
 
 =cut
-
-1;

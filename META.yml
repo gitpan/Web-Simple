@@ -23,4 +23,4 @@ requires:
   Plack: 0.9968
   Syntax::Keyword::Gather: 1.001
   warnings::illegalproto: 0.001
-version: 0.015
+version: 0.016

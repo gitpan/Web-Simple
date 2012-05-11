@@ -1,3 +1,6 @@
+0.016 - 2012-05-11
+  - Actually import weaken so the 0.015 fix doesn't implode
+
 0.015 - 2012-05-10
   - Fix a per-application-instance memory leak
 
