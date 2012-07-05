@@ -1,3 +1,6 @@
+0.017 - 2012-07-05
+  - Don't falsely recognize mod_cgid as FCGI
+
 0.016 - 2012-05-11
   - Actually import weaken so the 0.015 fix doesn't implode
 

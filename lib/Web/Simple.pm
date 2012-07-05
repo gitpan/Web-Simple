@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.016';
+our $VERSION = '0.017';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -30,7 +30,7 @@ sub _export_into {
   $INC{"${name}.pm"} = 'Set by "use Web::Simple;" invocation';
 }
 
-"Happy 62nd, wherever you are";
+1;
 
 =head1 NAME
 

@@ -5,6 +5,14 @@ examples/bloggery/posts/One-Post.html
 examples/bloggery/posts/One-Post.summary.html
 examples/dispatchex/dispatchex.cgi
 examples/hello-world/hello-world.cgi
+inc/Module/Install.pm
+inc/Module/Install/Base.pm
+inc/Module/Install/Can.pm
+inc/Module/Install/Fetch.pm
+inc/Module/Install/Makefile.pm
+inc/Module/Install/Metadata.pm
+inc/Module/Install/Win32.pm
+inc/Module/Install/WriteAll.pm
 lib/CSS/Declare.pm
 lib/HTML/Tags.pm
 lib/Plack/Middleware/Dispatch.pm
@@ -27,6 +35,7 @@ lib/XML/Tags.pm
 maint/Makefile.PL.include
 Makefile.PL
 MANIFEST			This list of files
+META.yml
 t/bloggery.t
 t/css_declare.t
 t/dispatch_misc.t
@@ -38,12 +47,11 @@ t/match-home.t
 t/param_parser.t
 t/post.t
 t/predicate_objects.t
+t/request_mode_heuristics.t
 t/response-filter.t
 t/stream_test.t
 t/sub-dispatch-args.t
 t/sub-dispatch-env.t
 t/tags.t
 t/wd-http-methods.t
-META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
-README                                   README file (added by Distar)

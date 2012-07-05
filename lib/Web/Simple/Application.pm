@@ -87,7 +87,8 @@ sub run {
   my $self = shift;
   if (
     $ENV{PHP_FCGI_CHILDREN} || $ENV{FCGI_ROLE} || $ENV{FCGI_SOCKET_PATH}
-    || -S STDIN # STDIN is a socket, almost certainly FastCGI
+    || ( -S STDIN && !$ENV{GATEWAY_INTERFACE} )
+    # If STDIN is a socket, almost certainly FastCGI, except for mod_cgid
     ) {
     return $self->_run_fcgi;
   } elsif ($ENV{GATEWAY_INTERFACE}) {
