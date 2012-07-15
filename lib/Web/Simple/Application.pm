@@ -94,13 +94,13 @@ sub run {
   } elsif ($ENV{GATEWAY_INTERFACE}) {
     return $self->_run_cgi;
   }
-  unless (@ARGV && $ARGV[0] =~ m{^[A-Z/]}) {
+  unless (@ARGV && $ARGV[0] =~ m{(^[A-Z/])|\@}) {
     return $self->_run_cli(@ARGV);
   }
 
   my @args = @ARGV;
 
-  unshift(@args, 'GET') if $args[0] =~ m{^/};
+  unshift(@args, 'GET') if $args[0] !~ /^[A-Z]/;
 
   $self->_run_cli_test_request(@args);
 }
@@ -110,6 +110,12 @@ sub _test_request_spec_to_http_request {
 
   # if it's a reference, assume a request object
   return $method if ref($method);
+
+  if ($path =~ s/^(.*?)\@//) {
+    my $basic = $1;
+    require MIME::Base64;
+    unshift @rest, 'Authorization:', 'Basic '.MIME::Base64::encode($basic);
+  }
 
   my $request = HTTP::Request->new($method => $path);
 
@@ -146,6 +152,7 @@ sub run_test_request {
   my ($self, @req) = @_;
 
   require HTTP::Request;
+
   require Plack::Test;
 
   my $request = $self->_test_request_spec_to_http_request(@req);
@@ -299,6 +306,10 @@ The body of the response is sent to STDOUT and the headers to STDERR, so
 
 will generally do the right thing.
 
+To send basic authentication credentials, use user:pass@ syntax -
+
+  $ ./myapp GET bob:secret@/protected/path
+
 Additionally, you can treat the file as though it were a standard PSGI
 application file (*.psgi).  For example you can start up up with C<plackup>
 
@@ -369,6 +380,13 @@ If the HTTP method is POST or PUT, then a series of pairs can be passed after
 this to create a form style message body. If you need to test an upload, then
 create an L<HTTP::Request> object by hand or use the C<POST> subroutine
 provided by L<HTTP::Request::Common>.
+
+If you prefix the URL with 'user:pass@' this will be converted into
+an Authorization header for HTTP basic auth:
+
+  my $res = $app->run_test_request(
+              GET => 'bob:secret@/protected/resource'
+            );
 
 If pairs are passed where the key ends in :, it is instead treated as a
 headers, so:

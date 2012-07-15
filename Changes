@@ -1,3 +1,7 @@
+0.018 - 2012-07-15
+  - Allow dots in parameter names
+  - Support for basic authentication in test requests
+
 0.017 - 2012-07-05
   - Don't falsely recognize mod_cgid as FCGI
 

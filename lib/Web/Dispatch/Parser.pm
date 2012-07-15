@@ -249,7 +249,7 @@ sub _parse_param_handler {
 
         # @foo= or foo= or @foo~ or foo~
 
-        /\G(\w+)/gc or $self->_blam('Expected parameter name');
+        /\G([\w.]*)/gc or $self->_blam('Expected parameter name');
 
         my $name = $1;
 

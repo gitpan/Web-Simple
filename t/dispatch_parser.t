@@ -393,6 +393,7 @@ my $dp = Web::Dispatch::Parser->new;
 #
 
 my $q = 'foo=FOO&bar=BAR1&baz=one+two&quux=QUUX1&quux=QUUX2'
+  .'&foo.bar=FOOBAR1&foo.bar=FOOBAR2&foo.baz=FOOBAZ'
   .'&bar=BAR2&quux=QUUX3&evil=%2F';
 
 my %all_single = (
@@ -401,6 +402,8 @@ my %all_single = (
   baz => 'one two',
   quux => 'QUUX3',
   evil => '/',
+  'foo.baz' => 'FOOBAZ',
+  'foo.bar' => 'FOOBAR2',
 );
 
 my %all_multi = (
@@ -409,6 +412,8 @@ my %all_multi = (
   baz => [ 'one two' ],
   quux => [ qw(QUUX1 QUUX2 QUUX3) ],
   evil => [ '/' ],
+  'foo.baz' => [ 'FOOBAZ' ],
+  'foo.bar' => [ qw(FOOBAR1 FOOBAR2) ],
 );
 
 foreach my $lose ('?foo=','?:foo=','?@foo=','?:@foo=') {
@@ -447,6 +452,12 @@ foreach my $win (
   [ '?foo=&@*' => 'FOO', \%all_multi ],
   [ '?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
   [ '?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '?foo.baz=' => 'FOOBAZ' ],
+  [ '?:foo.baz=' => { 'foo.baz' => 'FOOBAZ' } ],
+  [ '?foo.bar=' => 'FOOBAR2' ],
+  [ '?:foo.bar=' => { 'foo.bar' => 'FOOBAR2' } ],
+  [ '?@foo.bar=' => [ qw(FOOBAR1 FOOBAR2) ] ],
+  [ '?:@foo.bar=' => { 'foo.bar' => [ qw(FOOBAR1 FOOBAR2) ] } ],
 ) {
   my ($spec, @res) = @$win;
   my $match = $dp->parse($spec);
@@ -498,6 +509,12 @@ foreach my $win2 (
   [ '/foo/bar/+?foo=&@*' => 'FOO', \%all_multi ],
   [ '/foo/bar/+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
   [ '/foo/bar/+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar/+?foo.baz=' => 'FOOBAZ' ],
+  [ '/foo/bar/+?:foo.baz=' => { 'foo.baz' => 'FOOBAZ' } ],
+  [ '/foo/bar/+?foo.bar=' => 'FOOBAR2' ],
+  [ '/foo/bar/+?:foo.bar=' => { 'foo.bar' => 'FOOBAR2' } ],
+  [ '/foo/bar/+?@foo.bar=' => [ qw(FOOBAR1 FOOBAR2) ] ],
+  [ '/foo/bar/+?:@foo.bar=' => { 'foo.bar' => [ qw(FOOBAR1 FOOBAR2) ] } ],
 ) {
   my ($spec, @res) = @$win2;
   my $match = $dp->parse($spec);
@@ -549,6 +566,12 @@ foreach my $win3 (
   [ '/foo/bar+?foo=&@*' => 'FOO', \%all_multi ],
   [ '/foo/bar+?:foo=&@*' => { %all_multi, foo => 'FOO' } ],
   [ '/foo/bar+?:@bar=&*' => { %all_single, bar => [ qw(BAR1 BAR2) ] } ],
+  [ '/foo/bar+?foo.baz=' => 'FOOBAZ' ],
+  [ '/foo/bar+?:foo.baz=' => { 'foo.baz' => 'FOOBAZ' } ],
+  [ '/foo/bar+?foo.bar=' => 'FOOBAR2' ],
+  [ '/foo/bar+?:foo.bar=' => { 'foo.bar' => 'FOOBAR2' } ],
+  [ '/foo/bar+?@foo.bar=' => [ qw(FOOBAR1 FOOBAR2) ] ],
+  [ '/foo/bar+?:@foo.bar=' => { 'foo.bar' => [ qw(FOOBAR1 FOOBAR2) ] } ],
 ) {
   my ($spec, @res) = @$win3;
   my $match = $dp->parse($spec);
