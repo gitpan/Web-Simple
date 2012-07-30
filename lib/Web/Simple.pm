@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.018';
+our $VERSION = '0.019';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -461,8 +461,7 @@ Query and body parameters can be match via
 
 The body spec will match if the request content is either
 application/x-www-form-urlencoded or multipart/form-data - the latter
-of which is required for uploads, which are now handled experimentally
-- see below.
+of which is required for uploads - see below.
 
 The param spec is elements of one of the following forms -
 
@@ -525,11 +524,7 @@ hashref style, the arrayref and single parameters will appear in C<@_> in the
 order you defined them in the protoype, but all hashrefs will merge into a
 single C<$params>, as in the example above.
 
-=head3 Upload matches (EXPERIMENTAL)
-
-Note: This feature is experimental. This means that it may not remain
-100% in its current form. If we change it, notes on updating your code
-will be added to the L</CHANGES BETWEEN RELEASES> section below.
+=head3 Upload matches
 
   sub (*foo=) { # param specifier can be anything valid for query or body
 
@@ -610,6 +605,45 @@ but it will be ignored. This is because the perl parser strips whitespace
 from subroutine prototypes, so this is equivalent to
 
   sub (GET+/user/*) {
+
+=head3 Accessing parameters via C<%_>
+
+If your dispatch specification causes your dispatch subroutine to receive
+a hash reference as its first argument, the contained named parameters
+will be accessible via C<%_>.
+
+This can be used to access your path matches, if they're named:
+
+  sub (GET + /foo/:path_part) {
+    [ 200,
+      ['Content-type' => 'text/plain'],
+      ["We are in $_{path_part}"],
+    ];
+  }
+
+Or, if your first argument would be a hash reference containing named
+query parameters:
+
+  sub (GET + /foo + ?:some_param=) {
+    [ 200,
+      ['Content-type' => 'text/plain'],
+      ["We received $_{some_param} as parameter"],
+    ];
+  }
+
+Of course this also works when all you are doing is slurping the whole set
+of parameters by their name:
+
+  sub (GET + /foo + ?*) {
+    [ 200,
+      ['Content-type' => 'text/plain'],
+      [exists($_{foo}) ? "Received a foo: $_{foo}" : "No foo!"],
+    ],
+  }
+
+Note that only the first hash reference will be avaialble via C<%_>. If
+you receive additional hash references, you will need to access them as
+usual.
 
 =head3 Accessing the PSGI env hash
 
@@ -799,6 +833,8 @@ nperez <nperez@cpan.org>
 Robin Edwards <robin.ge@gmail.com>
 
 Andrew Rodland (hobbs) <andrew@cleverdomain.org>
+
+Robert Sedlacek (phaylon) <r.sedlacek@shadowcat.co.uk>
 
 =head1 COPYRIGHT
 

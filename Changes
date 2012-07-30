@@ -1,3 +1,7 @@
+0.019 - 2012-07-30
+  - Add %_ alias if first argument is a hashref
+  - Un-mark upload matches as experimental since they work
+
 0.018 - 2012-07-15
   - Allow dots in parameter names
   - Support for basic authentication in test requests
