@@ -24,6 +24,7 @@ lib/Web/Simple/Application.pm
 lib/Web/Simple/Deployment.pod
 lib/Web/Simple/DispatchNode.pm
 lib/Web/Simple/HackedPlack.pm
+lib/Web/Simple/Role.pm
 lib/XML/Tags.pm
 maint/Makefile.PL.include
 Makefile.PL
@@ -41,6 +42,7 @@ t/post.t
 t/predicate_objects.t
 t/request_mode_heuristics.t
 t/response-filter.t
+t/role.t
 t/stream_test.t
 t/sub-dispatch-args.t
 t/sub-dispatch-env.t

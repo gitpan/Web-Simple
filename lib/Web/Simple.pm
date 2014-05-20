@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.020';
+our $VERSION = '0.021';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -132,6 +132,16 @@ so that perl will not attempt to load the application again even if
 
 is encountered in other code.
 
+One important thing to remember when using
+
+  NameOfApplication->run_if_script;
+
+At the end of your app is that this call will create an instance of your app
+for you automatically, regardless of context. An easier way to think of this
+would be if the method were more verbosely named
+
+ NameOfApplication->run_request_if_script_else_turn_coderef_for_psgi;
+
 =head1 DISPATCH STRATEGY
 
 L<Web::Simple> despite being straightforward to use, has a powerful system
@@ -205,7 +215,7 @@ cleverness). If you want to return a PSGI sub you have to wrap it into an
 array ref.
 
   sub dispatch_request {
-    [ sub { 
+    [ sub {
         my $respond = shift;
         # This is pure PSGI here, so read perldoc PSGI
     } ]
@@ -213,10 +223,10 @@ array ref.
 
 If you return a subroutine with a prototype, the prototype is treated
 as a match specification - and if the test is passed, the body of the
-sub is called as a method any matched arguments (see below for more details).
+sub is called as a method and passed any matched arguments (see below for more details).
 
-You can also return a plain subroutine which will be called with just $env
-- remember that in this case if you need $self you -must- close over it.
+You can also return a plain subroutine which will be called with just C<$env>
+- remember that in this case if you need C<$self> you B<must> close over it.
 
 If you return a normal object, L<Web::Simple> will simply return it upwards on
 the assumption that a response_filter (or some arbitrary L<Plack::Middleware>)
@@ -227,6 +237,22 @@ somewhere will convert it to something useful.  This allows:
     sub (.html) { response_filter { $self->render_zoom($_[0]) } },
     sub (/user/*) { $self->users->get($_[1]) },
   }
+
+An alternative to using prototypes to declare a match specification for a given
+route is to provide a Dancer like key-value list:
+
+  sub dispatch_request {
+    my $self = shift;
+    (
+      '.html' => sub { response_filter { $self->render_zoom($_[0]) } },
+      '/user/*' => sub { $self->users->get($_[1]) },
+      'POST + %*' => 'handle_post',
+    )
+  }
+
+This can be useful in situations where you are generating a dispatch table
+programmatically, where setting a subroutines protoype is difficult.  Note that
+in the example above, C<handle_post> is a method that would be called.
 
 to render a user object to HTML, if there is an incoming URL such as:
 
@@ -240,8 +266,8 @@ This user object 'bubbles up' through all the wrapping middleware until it hits
 the C<response_filter> we defined, after which the return is converted to a
 true html response.
 
-However, two types of object are treated specially - a Plack::App object
-will have its C<->to_app> method called and be used as a dispatcher:
+However, two types of objects are treated specially - a C<Plack::Component> object
+will have its C<to_app> method called and be used as a dispatcher:
 
   sub dispatch_request {
     my $self = shift;
@@ -249,7 +275,7 @@ will have its C<->to_app> method called and be used as a dispatcher:
     ...
   }
 
-A Plack::Middleware object will be used as a filter for the rest of the
+A L<Plack::Middleware> object will be used as a filter for the rest of the
 dispatch being returned into:
 
   ## responds to /admin/track_usage AND /admin/delete_accounts
@@ -267,7 +293,7 @@ dispatch being returned into:
     },
   }
 
-Note that this is for the dispatch being -returned- to, so if you want to
+Note that this is for the dispatch being B<returned> to, so if you want to
 provide it inline you need to do:
 
   ## ALSO responds to /admin/track_usage AND /admin/delete_accounts
@@ -321,7 +347,7 @@ also match more than one part:
   sub (/domain/*/user/*) {
     my ($self, $domain, $user) = @_;
 
-and so on. To match an arbitrary number of parts, use -
+and so on. To match an arbitrary number of parts, use C<**>:
 
   sub (/page/**) {
     my ($self, $match) = @_;
@@ -333,9 +359,9 @@ This will result in a single element for the entire match. Note that you can do
 to match an arbitrary number of parts up to but not including some final
 part.
 
-Note: Since Web::Simple handles a concept of file extensions, * and **
+Note: Since Web::Simple handles a concept of file extensions, C<*> and C<**>
 matchers will not by default match things after a final dot, and this
-can be modified by using *.* and **.* in the final position, i.e.:
+can be modified by using C<*.*> and C<**.*> in the final position, e.g.:
 
   /one/*       matches /one/two.three    and captures "two"
   /one/*.*     matches /one/two.three    and captures "two.three"
@@ -346,7 +372,7 @@ Finally,
 
   sub (/foo/...) {
 
-Will match C</foo/> on the beginning of the path -and- strip it. This is
+Will match C</foo/> on the beginning of the path B<and> strip it. This is
 designed to be used to construct nested dispatch structures, but can also prove
 useful for having e.g. an optional language specification at the start of a
 path.
@@ -402,7 +428,7 @@ when it is contained in this type of path match. It matches to an empty path.
 
 =head4 Naming your patch matches
 
-Any */**/*.*/**.* match can be followed with :name to make it into a named
+Any C<*>, C<**>, C<*.*>, or C<**.*> match can be followed with C<:name> to make it into a named
 match, so:
 
   sub (/*:one/*:two/*:three/*:four) {
@@ -440,7 +466,7 @@ This makes it necessary to be explicit about the trailing slash.
   sub (.html) {
 
 will match .html from the path (assuming the subroutine itself returns
-something, of course). This is normally used for rendering - e.g.
+something, of course). This is normally used for rendering - e.g.:
 
   sub (.html) {
     response_filter { $self->render_html($_[1]) }
@@ -463,7 +489,7 @@ The body spec will match if the request content is either
 application/x-www-form-urlencoded or multipart/form-data - the latter
 of which is required for uploads - see below.
 
-The param spec is elements of one of the following forms -
+The param spec is elements of one of the following forms:
 
   param~        # optional parameter
   param=        # required parameter
@@ -476,16 +502,16 @@ The param spec is elements of one of the following forms -
   *             # include all other parameters in hashref
   @*            # include all other parameters as multiple in hashref
 
-separated by the & character. The arguments added to the request are
-one per non-:/* parameter (scalar for normal, arrayref for multiple),
-plus if any :/* specs exist a hashref containing those values.
+separated by the C<&> character. The arguments added to the request are
+one per non-C<:>/C<*> parameter (scalar for normal, arrayref for multiple),
+plus if any C<:>/C<*> specs exist a hashref containing those values.
 
 Please note that if you specify a multiple type parameter match, you are
 ensured of getting an arrayref for the value, EVEN if the current incoming
 request has only one value.  However if a parameter is specified as single
 and multiple values are found, the last one will be used.
 
-For example to match a page parameter with an optional order_by parameter one
+For example to match a C<page> parameter with an optional C<order_by> parameter one
 would write:
 
   sub (?page=&order_by~) {
@@ -516,7 +542,7 @@ You can also mix these, so:
      my ($self, $foo, $bar, $params);
 
 where $bar is an arrayref (possibly an empty one), and $params contains
-arrayref values for all parameters -not- mentioned and a scalar value for
+arrayref values for all parameters B<not> mentioned and a scalar value for
 the 'coffee' parameter.
 
 Note, in the case where you combine arrayref, single parameter and named
@@ -597,7 +623,7 @@ which will never match!
 
 =head3 Whitespace
 
-Note that for legibility you are permitted to use whitespace -
+Note that for legibility you are permitted to use whitespace:
 
   sub (GET + /user/*) {
 
@@ -612,7 +638,7 @@ If your dispatch specification causes your dispatch subroutine to receive
 a hash reference as its first argument, the contained named parameters
 will be accessible via C<%_>.
 
-This can be used to access your path matches, if they're named:
+This can be used to access your path matches, if they are named:
 
   sub (GET + /foo/:path_part) {
     [ 200,
@@ -641,21 +667,21 @@ of parameters by their name:
     ],
   }
 
-Note that only the first hash reference will be avaialble via C<%_>. If
+Note that only the first hash reference will be available via C<%_>. If
 you receive additional hash references, you will need to access them as
 usual.
 
 =head3 Accessing the PSGI env hash
 
 In some cases you may wish to get the raw PSGI env hash - to do this,
-you can either use a plain sub -
+you can either use a plain sub:
 
   sub {
     my ($env) = @_;
     ...
   }
 
-or use the PSGI_ENV constant exported to retrieve it:
+or use the C<PSGI_ENV> constant exported to retrieve it from C<@_>:
 
   sub (GET + /foo + ?some_param=) {
     my $param = $_[1];
@@ -697,9 +723,9 @@ It creates and returns a special dispatcher that always matches, and instead
 of continuing dispatch re-delegates it to the start of the dispatch process,
 but with the path of the request altered to the supplied URL.
 
-Thus if you receive a POST to '/some/url' and return a redispatch to
-'/other/url', the dispatch behaviour will be exactly as if the same POST
-request had been made to '/other/url' instead.
+Thus if you receive a POST to C</some/url> and return a redispatch to
+C</other/url>, the dispatch behaviour will be exactly as if the same POST
+request had been made to C</other/url> instead.
 
 Note, this is not the same as returning an HTTP 3xx redirect as a response;
 rather it is a much more efficient internal process.
@@ -720,15 +746,15 @@ dispatch {} has gone away - instead, you write:
     ...
   }
 
-Note that this method is still -returning- the dispatch code - just like
-dispatch did.
+Note that this method is still B<returning> the dispatch code - just like
+C<dispatch> did.
 
-Also note that you need the 'my $self = shift' since the magic $self
+Also note that you need the C<< my $self = shift >> since the magic $self
 variable went away.
 
 =item * the magic $self variable went away.
 
-Just add 'my $self = shift;' while writing your 'sub dispatch_request {'
+Just add C<< my $self = shift; >> while writing your C<< sub dispatch_request { >>
 like a normal perl method.
 
 =item * subdispatch deleted - all dispatchers can now subdispatch
@@ -835,6 +861,10 @@ Robin Edwards <robin.ge@gmail.com>
 Andrew Rodland (hobbs) <andrew@cleverdomain.org>
 
 Robert Sedlacek (phaylon) <r.sedlacek@shadowcat.co.uk>
+
+Hakim Cassimally (osfameron) <osfameron@cpan.org>
+
+Karen Etheridge (ether) <ether@cpan.org>
 
 =head1 COPYRIGHT
 

@@ -96,6 +96,16 @@ DESCRIPTION
 
     is encountered in other code.
 
+    One important thing to remember when using
+
+      NameOfApplication->run_if_script;
+
+    At the end of your app is that this call will create an instance of your
+    app for you automatically, regardless of context. An easier way to think
+    of this would be if the method were more verbosely named
+
+     NameOfApplication->run_request_if_script_else_turn_coderef_for_psgi;
+
 DISPATCH STRATEGY
     Web::Simple despite being straightforward to use, has a powerful system
     for matching all sorts of incoming URLs to one or more subroutines.
@@ -166,7 +176,7 @@ DISPATCH STRATEGY
     into an array ref.
 
       sub dispatch_request {
-        [ sub { 
+        [ sub {
             my $respond = shift;
             # This is pure PSGI here, so read perldoc PSGI
         } ]
@@ -174,12 +184,12 @@ DISPATCH STRATEGY
 
     If you return a subroutine with a prototype, the prototype is treated as
     a match specification - and if the test is passed, the body of the sub
-    is called as a method any matched arguments (see below for more
-    details).
+    is called as a method and passed any matched arguments (see below for
+    more details).
 
     You can also return a plain subroutine which will be called with just
-    $env - remember that in this case if you need $self you -must- close
-    over it.
+    $env - remember that in this case if you need $self you must close over
+    it.
 
     If you return a normal object, Web::Simple will simply return it upwards
     on the assumption that a response_filter (or some arbitrary
@@ -191,6 +201,23 @@ DISPATCH STRATEGY
         sub (.html) { response_filter { $self->render_zoom($_[0]) } },
         sub (/user/*) { $self->users->get($_[1]) },
       }
+
+    An alternative to using prototypes to declare a match specification for
+    a given route is to provide a Dancer like key-value list:
+
+      sub dispatch_request {
+        my $self = shift;
+        (
+          '.html' => sub { response_filter { $self->render_zoom($_[0]) } },
+          '/user/*' => sub { $self->users->get($_[1]) },
+          'POST + %*' => 'handle_post',
+        )
+      }
+
+    This can be useful in situations where you are generating a dispatch
+    table programmatically, where setting a subroutines protoype is
+    difficult. Note that in the example above, "handle_post" is a method
+    that would be called.
 
     to render a user object to HTML, if there is an incoming URL such as:
 
@@ -204,8 +231,9 @@ DISPATCH STRATEGY
     middleware until it hits the "response_filter" we defined, after which
     the return is converted to a true html response.
 
-    However, two types of object are treated specially - a Plack::App object
-    will have its "-"to_app> method called and be used as a dispatcher:
+    However, two types of objects are treated specially - a
+    "Plack::Component" object will have its "to_app" method called and be
+    used as a dispatcher:
 
       sub dispatch_request {
         my $self = shift;
@@ -231,8 +259,8 @@ DISPATCH STRATEGY
         },
       }
 
-    Note that this is for the dispatch being -returned- to, so if you want
-    to provide it inline you need to do:
+    Note that this is for the dispatch being returned to, so if you want to
+    provide it inline you need to do:
 
       ## ALSO responds to /admin/track_usage AND /admin/delete_accounts
 
@@ -283,7 +311,7 @@ DISPATCH STRATEGY
       sub (/domain/*/user/*) {
         my ($self, $domain, $user) = @_;
 
-    and so on. To match an arbitrary number of parts, use -
+    and so on. To match an arbitrary number of parts, use "**":
 
       sub (/page/**) {
         my ($self, $match) = @_;
@@ -296,9 +324,10 @@ DISPATCH STRATEGY
     to match an arbitrary number of parts up to but not including some final
     part.
 
-    Note: Since Web::Simple handles a concept of file extensions, * and **
-    matchers will not by default match things after a final dot, and this
-    can be modified by using *.* and **.* in the final position, i.e.:
+    Note: Since Web::Simple handles a concept of file extensions, "*" and
+    "**" matchers will not by default match things after a final dot, and
+    this can be modified by using "*.*" and "**.*" in the final position,
+    e.g.:
 
       /one/*       matches /one/two.three    and captures "two"
       /one/*.*     matches /one/two.three    and captures "two.three"
@@ -309,7 +338,7 @@ DISPATCH STRATEGY
 
       sub (/foo/...) {
 
-    Will match "/foo/" on the beginning of the path -and- strip it. This is
+    Will match "/foo/" on the beginning of the path and strip it. This is
     designed to be used to construct nested dispatch structures, but can
     also prove useful for having e.g. an optional language specification at
     the start of a path.
@@ -366,8 +395,8 @@ DISPATCH STRATEGY
     to an empty path.
 
    Naming your patch matches
-    Any */**/*.*/**.* match can be followed with :name to make it into a
-    named match, so:
+    Any "*", "**", "*.*", or "**.*" match can be followed with ":name" to
+    make it into a named match, so:
 
       sub (/*:one/*:two/*:three/*:four) {
         "I match /1/2/3/4 capturing { one => 1, two =>  2, three => 3, four => 4 }"
@@ -402,7 +431,7 @@ DISPATCH STRATEGY
       sub (.html) {
 
     will match .html from the path (assuming the subroutine itself returns
-    something, of course). This is normally used for rendering - e.g.
+    something, of course). This is normally used for rendering - e.g.:
 
       sub (.html) {
         response_filter { $self->render_html($_[1]) }
@@ -424,7 +453,7 @@ DISPATCH STRATEGY
     application/x-www-form-urlencoded or multipart/form-data - the latter of
     which is required for uploads - see below.
 
-    The param spec is elements of one of the following forms -
+    The param spec is elements of one of the following forms:
 
       param~        # optional parameter
       param=        # required parameter
@@ -437,16 +466,17 @@ DISPATCH STRATEGY
       *             # include all other parameters in hashref
       @*            # include all other parameters as multiple in hashref
 
-    separated by the & character. The arguments added to the request are one
-    per non-:/* parameter (scalar for normal, arrayref for multiple), plus
-    if any :/* specs exist a hashref containing those values.
+    separated by the "&" character. The arguments added to the request are
+    one per non-":"/"*" parameter (scalar for normal, arrayref for
+    multiple), plus if any ":"/"*" specs exist a hashref containing those
+    values.
 
     Please note that if you specify a multiple type parameter match, you are
     ensured of getting an arrayref for the value, EVEN if the current
     incoming request has only one value. However if a parameter is specified
     as single and multiple values are found, the last one will be used.
 
-    For example to match a page parameter with an optional order_by
+    For example to match a "page" parameter with an optional "order_by"
     parameter one would write:
 
       sub (?page=&order_by~) {
@@ -478,8 +508,8 @@ DISPATCH STRATEGY
          my ($self, $foo, $bar, $params);
 
     where $bar is an arrayref (possibly an empty one), and $params contains
-    arrayref values for all parameters -not- mentioned and a scalar value
-    for the 'coffee' parameter.
+    arrayref values for all parameters not mentioned and a scalar value for
+    the 'coffee' parameter.
 
     Note, in the case where you combine arrayref, single parameter and named
     hashref style, the arrayref and single parameters will appear in @_ in
@@ -559,7 +589,7 @@ DISPATCH STRATEGY
     which will never match!
 
    Whitespace
-    Note that for legibility you are permitted to use whitespace -
+    Note that for legibility you are permitted to use whitespace:
 
       sub (GET + /user/*) {
 
@@ -573,7 +603,7 @@ DISPATCH STRATEGY
     receive a hash reference as its first argument, the contained named
     parameters will be accessible via %_.
 
-    This can be used to access your path matches, if they're named:
+    This can be used to access your path matches, if they are named:
 
       sub (GET + /foo/:path_part) {
         [ 200,
@@ -602,20 +632,20 @@ DISPATCH STRATEGY
         ],
       }
 
-    Note that only the first hash reference will be avaialble via %_. If you
+    Note that only the first hash reference will be available via %_. If you
     receive additional hash references, you will need to access them as
     usual.
 
    Accessing the PSGI env hash
     In some cases you may wish to get the raw PSGI env hash - to do this,
-    you can either use a plain sub -
+    you can either use a plain sub:
 
       sub {
         my ($env) = @_;
         ...
       }
 
-    or use the PSGI_ENV constant exported to retrieve it:
+    or use the "PSGI_ENV" constant exported to retrieve it from @_:
 
       sub (GET + /foo + ?some_param=) {
         my $param = $_[1];
@@ -657,9 +687,9 @@ EXPORTED SUBROUTINES
     dispatch process, but with the path of the request altered to the
     supplied URL.
 
-    Thus if you receive a POST to '/some/url' and return a redispatch to
-    '/other/url', the dispatch behaviour will be exactly as if the same POST
-    request had been made to '/other/url' instead.
+    Thus if you receive a POST to "/some/url" and return a redispatch to
+    "/other/url", the dispatch behaviour will be exactly as if the same POST
+    request had been made to "/other/url" instead.
 
     Note, this is not the same as returning an HTTP 3xx redirect as a
     response; rather it is a much more efficient internal process.
@@ -676,16 +706,16 @@ CHANGES BETWEEN RELEASES
             ...
           }
 
-        Note that this method is still -returning- the dispatch code - just
-        like dispatch did.
+        Note that this method is still returning the dispatch code - just
+        like "dispatch" did.
 
-        Also note that you need the 'my $self = shift' since the magic $self
+        Also note that you need the "my $self = shift" since the magic $self
         variable went away.
 
     *   the magic $self variable went away.
 
-        Just add 'my $self = shift;' while writing your 'sub
-        dispatch_request {' like a normal perl method.
+        Just add "my $self = shift;" while writing your "sub
+        dispatch_request {" like a normal perl method.
 
     *   subdispatch deleted - all dispatchers can now subdispatch
 
@@ -779,6 +809,10 @@ CONTRIBUTORS
     Andrew Rodland (hobbs) <andrew@cleverdomain.org>
 
     Robert Sedlacek (phaylon) <r.sedlacek@shadowcat.co.uk>
+
+    Hakim Cassimally (osfameron) <osfameron@cpan.org>
+
+    Karen Etheridge (ether) <ether@cpan.org>
 
 COPYRIGHT
     Copyright (c) 2011 the Web::Simple "AUTHOR" and "CONTRIBUTORS" as listed

@@ -11,15 +11,23 @@ use Web::Dispatch::Node;
 
 with 'Web::Dispatch::ToApp';
 
-has app => (is => 'ro', required => 1);
+has dispatch_app => (
+  is => 'lazy', builder => sub { shift->dispatch_object->to_app }
+);
+has dispatch_object => (is => 'ro', required => 0);
 has parser_class => (
   is => 'ro', default => quote_sub q{ 'Web::Dispatch::Parser' }
 );
 has node_class => (
   is => 'ro', default => quote_sub q{ 'Web::Dispatch::Node' }
 );
-has node_args => (is => 'ro', default => quote_sub q{ {} });
 has _parser => (is => 'lazy');
+
+after BUILDARGS => sub {
+  my ( $self, %args ) = @_;
+  die "Either dispatch_app or dispatch_object need to be supplied."
+    if !$args{dispatch_app} and !$args{dispatch_object}
+};
 
 sub _build__parser {
   my ($self) = @_;
@@ -28,7 +36,7 @@ sub _build__parser {
 
 sub call {
   my ($self, $env) = @_;
-  my $res = $self->_dispatch($env, $self->app);
+  my $res = $self->_dispatch($env, $self->dispatch_app);
   return $res->[0] if ref($res) eq 'ARRAY' and @{$res} == 1 and ref($res->[0]) eq 'CODE';
   return $res;
 }
@@ -114,21 +122,21 @@ sub _to_try {
 
   if (ref($try) eq 'CODE') {
     if (defined(my $proto = prototype($try))) {
-      $self->_construct_node(match => $proto, run => $try)->to_app;
+      $self->_construct_node(match => $proto, run => $try);
     } else {
       $try
     }
-  } elsif (!ref($try) and ref($more->[0]) eq 'CODE') {
-    $self->_construct_node(match => $try, run => shift(@$more))->to_app;
+  } elsif (!ref($try)
+    and (ref($more->[0]) eq 'CODE'
+      or (!ref($more->[0]) and $self->dispatch_object
+        and $self->dispatch_object->can($more->[0])))
+  ) {
+    $self->_construct_node(match => $try, run => shift(@$more));
   } elsif (
     (blessed($try) && $try->isa('Web::Dispatch::Matcher'))
     and (ref($more->[0]) eq 'CODE')
   ) {
-    $self->node_class->new({
-      %{$self->node_args},
-      match => $try,
-      run => shift(@$more)
-    })->to_app;
+    $self->_construct_node(match => $try, run => shift(@$more));
   } elsif (blessed($try) && $try->can('to_app')) {
     $try->to_app;
   } else {
@@ -138,8 +146,13 @@ sub _to_try {
 
 sub _construct_node {
   my ($self, %args) = @_;
-  $args{match} = $self->_parser->parse($args{match});
-  $self->node_class->new({ %{$self->node_args}, %args });
+  $args{match} = $self->_parser->parse($args{match}) if !ref $args{match};
+  if ( my $obj = $self->dispatch_object) {
+    # if possible, call dispatchers as methods of the app object
+    my $dispatch_sub = $args{run};
+    $args{run} = sub { $obj->$dispatch_sub(@_) };
+  }
+  $self->node_class->new(\%args)->to_app;
 }
 
 1;
