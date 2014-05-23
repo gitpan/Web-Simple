@@ -22,13 +22,12 @@ lib/Web/Simple.pm
 lib/Web/Simple/AntiquatedPerl.pod
 lib/Web/Simple/Application.pm
 lib/Web/Simple/Deployment.pod
-lib/Web/Simple/DispatchNode.pm
 lib/Web/Simple/HackedPlack.pm
 lib/Web/Simple/Role.pm
 lib/XML/Tags.pm
 maint/Makefile.PL.include
 Makefile.PL
-MANIFEST
+MANIFEST			This list of files
 t/bloggery.t
 t/css_declare.t
 t/dispatch_misc.t
