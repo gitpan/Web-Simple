@@ -25,6 +25,8 @@ lib/Web/Simple/Deployment.pod
 lib/Web/Simple/HackedPlack.pm
 lib/Web/Simple/Role.pm
 lib/XML/Tags.pm
+maint/bump-version
+maint/Makefile.include
 maint/Makefile.PL.include
 Makefile.PL
 MANIFEST			This list of files

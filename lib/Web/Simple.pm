@@ -6,7 +6,7 @@ use warnings::illegalproto ();
 use Moo ();
 use Web::Dispatch::Wrapper ();
 
-our $VERSION = '0.023';
+our $VERSION = '0.024';
 
 sub import {
   my ($class, $app_package) = @_;
@@ -517,9 +517,9 @@ would write:
   sub (?page=&order_by~) {
     my ($self, $page, $order_by) = @_;
     return unless $page =~ /^\d+$/;
-    $page ||= 'id';
+    $order_by ||= 'id';
     response_filter {
-      $_[1]->search_rs({}, $p);
+      $_[1]->search_rs({}, { page => $page, order_by => $order_by });
     }
   }
 
