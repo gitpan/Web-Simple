@@ -3,10 +3,16 @@ abstract: 'A quick and easy way to build simple web applications'
 author:
   - 'mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>'
 build_requires:
+  Data::Dumper::Concise: '2.020'
   ExtUtils::MakeMaker: '0'
+  HTTP::Request::AsCGI: '0'
+  HTTP::Request::Common: '0'
+  HTTP::Response: '0'
+  Socket: '0'
+  Test::More: '0.88'
 configure_requires:
   ExtUtils::MakeMaker: '0'
-dynamic_config: 1
+dynamic_config: 0
 generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520'
 license: perl
 meta-spec:
@@ -18,9 +24,30 @@ no_index:
     - t
     - inc
 requires:
-  Data::Dumper::Concise: '2.020'
+  Carp: '0'
+  Encode: '0'
+  Exporter: '0'
+  File::Glob: '0'
+  HTTP::Body: '0'
+  HTTP::Headers: '0'
+  HTTP::Request: '0'
+  IO::Handle: '0'
+  MIME::Base64: '0'
   Moo: '0.009014'
   Plack: '0.9968'
+  Scalar::Util: '0'
+  Sub::Quote: '0'
   Syntax::Keyword::Gather: '1.001'
-  warnings::illegalproto: '0.001'
-version: '0.024'
+  URI: '0'
+  XML::Tags: '0'
+  base: '0'
+  overload: '0'
+  perl: '5.006'
+  strict: '0'
+  strictures: '1'
+  warnings: '0'
+  warnings::illegalproto: '0'
+resources:
+  bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
+  repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
+version: '0.025'
