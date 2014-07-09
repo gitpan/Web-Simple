@@ -4,7 +4,7 @@
       "mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>"
    ],
    "dynamic_config" : 0,
-   "generated_by" : "ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520",
+   "generated_by" : "ExtUtils::MakeMaker version 6.84, CPAN::Meta::Converter version 2.140640",
    "license" : [
       "perl_5"
    ],
@@ -21,11 +21,6 @@
    },
    "prereqs" : {
       "build" : {
-         "requires" : {
-            "ExtUtils::MakeMaker" : "0"
-         }
-      },
-      "configure" : {
          "requires" : {
             "ExtUtils::MakeMaker" : "0"
          }
@@ -47,7 +42,6 @@
             "Sub::Quote" : "0",
             "Syntax::Keyword::Gather" : "1.001",
             "URI" : "0",
-            "XML::Tags" : "0",
             "base" : "0",
             "overload" : "0",
             "perl" : "5.006",
@@ -83,5 +77,5 @@
          "web" : "http://git.shadowcat.co.uk/gitweb/gitweb.cgi?p=p5sagit/Web-Simple.git"
       }
    },
-   "version" : "0.025"
+   "version" : "0.026"
 }

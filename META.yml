@@ -10,10 +10,8 @@ build_requires:
   HTTP::Response: '0'
   Socket: '0'
   Test::More: '0.88'
-configure_requires:
-  ExtUtils::MakeMaker: '0'
 dynamic_config: 0
-generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520'
+generated_by: 'ExtUtils::MakeMaker version 6.84, CPAN::Meta::Converter version 2.140640'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -39,7 +37,6 @@ requires:
   Sub::Quote: '0'
   Syntax::Keyword::Gather: '1.001'
   URI: '0'
-  XML::Tags: '0'
   base: '0'
   overload: '0'
   perl: '5.006'
@@ -50,4 +47,4 @@ requires:
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
   repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
-version: '0.025'
+version: '0.026'
