@@ -4,14 +4,12 @@ author:
   - 'mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>'
 build_requires:
   Data::Dumper::Concise: '2.020'
-  ExtUtils::MakeMaker: '0'
-  HTTP::Request::AsCGI: '0'
   HTTP::Request::Common: '0'
   HTTP::Response: '0'
   Socket: '0'
   Test::More: '0.88'
 dynamic_config: 0
-generated_by: 'ExtUtils::MakeMaker version 6.84, CPAN::Meta::Converter version 2.140640'
+generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -47,4 +45,4 @@ requires:
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
   repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
-version: '0.026'
+version: 0.026_001
