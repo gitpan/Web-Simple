@@ -27,23 +27,12 @@
       },
       "runtime" : {
          "requires" : {
-            "Carp" : "0",
             "Encode" : "0",
-            "Exporter" : "0",
-            "File::Glob" : "0",
-            "HTTP::Body" : "0",
-            "HTTP::Headers" : "0",
-            "HTTP::Request" : "0",
-            "IO::Handle" : "0",
-            "MIME::Base64" : "0",
+            "Exporter" : "5.57",
             "Moo" : "0.009014",
             "Plack" : "0.9968",
             "Scalar::Util" : "0",
-            "Sub::Quote" : "0",
             "Syntax::Keyword::Gather" : "1.001",
-            "URI" : "0",
-            "base" : "0",
-            "overload" : "0",
             "perl" : "5.006",
             "strictures" : "1",
             "warnings::illegalproto" : "0"
@@ -56,9 +45,6 @@
          },
          "requires" : {
             "Data::Dumper::Concise" : "2.020",
-            "HTTP::Request::Common" : "0",
-            "HTTP::Response" : "0",
-            "Socket" : "0",
             "Test::More" : "0.88"
          }
       }
@@ -75,5 +61,5 @@
          "web" : "http://git.shadowcat.co.uk/gitweb/gitweb.cgi?p=p5sagit/Web-Simple.git"
       }
    },
-   "version" : "0.027"
+   "version" : "0.028"
 }

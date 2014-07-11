@@ -1,6 +1,6 @@
 use strict;
 use warnings FATAL => 'all';
-use 5.008001;
+use 5.006;
 use ExtUtils::MakeMaker;
 
 (do 'maint/Makefile.PL.include' or die $@) unless -f 'META.yml';
@@ -35,23 +35,12 @@ my %WriteMakefileArgs = (
       },
       runtime => {
         requires => {
-          'Carp' => '0',
           'Encode' => '0',              # not core in 5.6
-          'Exporter' => '0',
-          'File::Glob' => '0',
-          'HTTP::Body' => '0',
-          'HTTP::Headers' => '0',
-          'HTTP::Request' => '0',
-          'IO::Handle' => '0',
-          'MIME::Base64' => '0',
+          'Exporter' => '5.57',         # use Exporter 'import'
           'Moo' => '0.009014',
           'Plack' => '0.9968',
           'Scalar::Util' => '0',        # not core in 5.6
-          'Sub::Quote' => '0',
           'Syntax::Keyword::Gather' => '1.001',
-          'URI' => '0',
-          'base' => '0',
-          'overload' => '0',
           'strictures' => '1',
           'warnings::illegalproto' => '0',
           'perl' => '5.006',
@@ -60,9 +49,6 @@ my %WriteMakefileArgs = (
       test => {
         requires => {
           'Data::Dumper::Concise' => '2.020',
-          'HTTP::Request::Common' => '0',
-          'HTTP::Response' => '0',
-          'Socket' => '0',
           'Test::More' => '0.88',
         },
         recommends => {

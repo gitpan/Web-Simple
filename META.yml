@@ -4,9 +4,6 @@ author:
   - 'mst - Matt S. Trout (cpan:MSTROUT) <mst@shadowcat.co.uk>'
 build_requires:
   Data::Dumper::Concise: '2.020'
-  HTTP::Request::Common: '0'
-  HTTP::Response: '0'
-  Socket: '0'
   Test::More: '0.88'
 configure_requires:
   ExtUtils::MakeMaker: '0'
@@ -22,27 +19,16 @@ no_index:
     - t
     - inc
 requires:
-  Carp: '0'
   Encode: '0'
-  Exporter: '0'
-  File::Glob: '0'
-  HTTP::Body: '0'
-  HTTP::Headers: '0'
-  HTTP::Request: '0'
-  IO::Handle: '0'
-  MIME::Base64: '0'
+  Exporter: '5.57'
   Moo: '0.009014'
   Plack: '0.9968'
   Scalar::Util: '0'
-  Sub::Quote: '0'
   Syntax::Keyword::Gather: '1.001'
-  URI: '0'
-  base: '0'
-  overload: '0'
   perl: '5.006'
   strictures: '1'
   warnings::illegalproto: '0'
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
   repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
-version: '0.027'
+version: '0.028'
