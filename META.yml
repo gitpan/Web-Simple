@@ -8,6 +8,8 @@ build_requires:
   HTTP::Response: '0'
   Socket: '0'
   Test::More: '0.88'
+configure_requires:
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 0
 generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520'
 license: perl
@@ -38,11 +40,9 @@ requires:
   base: '0'
   overload: '0'
   perl: '5.006'
-  strict: '0'
   strictures: '1'
-  warnings: '0'
   warnings::illegalproto: '0'
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
   repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
-version: 0.026_001
+version: '0.027'

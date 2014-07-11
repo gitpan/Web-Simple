@@ -20,6 +20,11 @@
       ]
    },
    "prereqs" : {
+      "configure" : {
+         "requires" : {
+            "ExtUtils::MakeMaker" : "0"
+         }
+      },
       "runtime" : {
          "requires" : {
             "Carp" : "0",
@@ -40,9 +45,7 @@
             "base" : "0",
             "overload" : "0",
             "perl" : "5.006",
-            "strict" : "0",
             "strictures" : "1",
-            "warnings" : "0",
             "warnings::illegalproto" : "0"
          }
       },
@@ -60,7 +63,7 @@
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "mailto" : "bug-Web-Simple@rt.cpan.org",
@@ -72,5 +75,5 @@
          "web" : "http://git.shadowcat.co.uk/gitweb/gitweb.cgi?p=p5sagit/Web-Simple.git"
       }
    },
-   "version" : "0.026_001"
+   "version" : "0.027"
 }
