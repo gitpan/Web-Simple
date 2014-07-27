@@ -13,10 +13,10 @@ my %WriteMakefileArgs = (
     'meta-spec' => { version => 2 },
     dynamic_config => 0,
     resources => {
-      # r/w: p5sagit@git.shadowcat.co.uk:Web-Simple.git
+      # r/w: catagits@git.shadowcat.co.uk:Web-Simple.git
       repository => {
-        url => 'git://git.shadowcat.co.uk/p5sagit/Web-Simple.git',
-        web => 'http://git.shadowcat.co.uk/gitweb/gitweb.cgi?p=p5sagit/Web-Simple.git',
+        url => 'git://git.shadowcat.co.uk/catagits/Web-Simple.git',
+        web => 'http://git.shadowcat.co.uk/gitweb/gitweb.cgi?p=catagits/Web-Simple.git',
         type => 'git',
       },
       bugtracker => {
@@ -78,6 +78,9 @@ for (qw(configure build test runtime)) {
 
 $WriteMakefileArgs{MIN_PERL_VERSION} = delete $WriteMakefileArgs{PREREQ_PM}{perl} || 0;
 
+die 'attention developer: you need to do a sane meta merge here!'
+  if keys %{$WriteMakefileArgs{BUILD_REQUIRES}};
+
 $WriteMakefileArgs{BUILD_REQUIRES} = {
     %{$WriteMakefileArgs{BUILD_REQUIRES} || {}},
     %{delete $WriteMakefileArgs{TEST_REQUIRES}}
@@ -90,5 +93,14 @@ $WriteMakefileArgs{PREREQ_PM} = {
 
 delete $WriteMakefileArgs{CONFIGURE_REQUIRES}
   if $eumm_version < 6.51_03;
+
+delete $WriteMakefileArgs{MIN_PERL_VERSION}
+  if $eumm_version < 6.48;
+
+delete @WriteMakefileArgs{qw(META_ADD META_MERGE)}
+  if $eumm_version < 6.46;
+
+delete $WriteMakefileArgs{LICENSE}
+  if $eumm_version < 6.31;
 
 WriteMakefile(%WriteMakefileArgs);

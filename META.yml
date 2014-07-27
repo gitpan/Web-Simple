@@ -8,7 +8,7 @@ build_requires:
 configure_requires:
   ExtUtils::MakeMaker: '0'
 dynamic_config: 0
-generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.141520'
+generated_by: 'ExtUtils::MakeMaker version 6.9905, CPAN::Meta::Converter version 2.142060'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -30,5 +30,5 @@ requires:
   warnings::illegalproto: '0'
 resources:
   bugtracker: https://rt.cpan.org/Public/Dist/Display.html?Name=Web-Simple
-  repository: git://git.shadowcat.co.uk/p5sagit/Web-Simple.git
-version: '0.028'
+  repository: git://git.shadowcat.co.uk/catagits/Web-Simple.git
+version: '0.029'
